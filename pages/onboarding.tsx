@@ -1,7 +1,7 @@
 'use client';
 
 import { useFarmContext } from '@/components/providers/FarmProvider';
-import { createCycleWithDefaultScope, createFarm } from '@/lib/growlog/mutations';
+import { createFoundationSetup } from '@/lib/growlog/mutations';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -44,15 +44,14 @@ export default function OnboardingPage() {
     setError(null);
     setPending(true);
     try {
-      const farmId = await createFarm(supabase, farmName.trim(), tz);
       const start = new Date().toISOString().slice(0, 10);
-      await createCycleWithDefaultScope(supabase, {
-        farmId,
-        name: cycleName.trim() || 'Цикл 1',
+      await createFoundationSetup(supabase, {
+        farmName: farmName.trim(),
+        timezone: tz,
+        cycleName: cycleName.trim() || 'Цикл 1',
         cultivarName: cultivar.trim() || undefined,
         startDate: start,
         stage,
-        createdBy: userId,
       });
       await refetchAll();
       await router.replace('/');

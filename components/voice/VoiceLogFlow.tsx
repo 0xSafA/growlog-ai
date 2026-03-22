@@ -83,6 +83,9 @@ export function VoiceLogFlow() {
         }
         const text = trJson.text?.trim() ?? '';
         setTranscript(text);
+        if (!text) {
+          throw new Error('Пустая расшифровка — повторите запись');
+        }
 
         const exRes = await fetch('/api/voice/extract', {
           method: 'POST',

@@ -3,8 +3,11 @@
 import { AppRouteReady } from '@/components/AppRouteReady';
 import { AppShell } from '@/components/layout/AppShell';
 import { useFarmContext } from '@/components/providers/FarmProvider';
+import {
+  formatPhotoSizeLimit,
+  getMaxPhotoBytesVisionClient,
+} from '@/lib/growlog/photo-constants';
 import { createPhotoCaptureEvent } from '@/lib/growlog/mutations';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import Head from 'next/head';
@@ -17,10 +20,19 @@ function PhotoForm() {
   const [pending, setPending] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  const maxBytes = getMaxPhotoBytesVisionClient();
+
   async function onPick(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file || !farmId || !cycle || !primaryScope) return;
     setError(null);
+    if (file.size > maxBytes) {
+      setError(
+        `Файл слишком большой (${formatPhotoSizeLimit(file.size)}). Для vision-анализа максимум ${formatPhotoSizeLimit(maxBytes)} — сожмите или уменьшите изображение.`
+      );
+      e.target.value = '';
+      return;
+    }
     setPending(true);
     try {
       await createPhotoCaptureEvent(supabase, {
@@ -62,6 +74,9 @@ function PhotoForm() {
         <div className="space-y-2">
           <label className="text-sm font-medium">Файл</label>
           <Input ref={inputRef} type="file" accept="image/*" onChange={onPick} disabled={pending} />
+          <p className="text-xs text-muted-foreground">
+            До {formatPhotoSizeLimit(maxBytes)} — иначе сервер отклонит файл при vision-анализе (ADR-010).
+          </p>
         </div>
         {error && <p className="text-sm text-destructive">{error}</p>}
         {pending && <p className="text-sm text-muted-foreground">Загрузка…</p>}

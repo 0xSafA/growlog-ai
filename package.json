@@ -7,7 +7,13 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "worker": "tsx scripts/background-worker.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:unit": "vitest run tests/unit",
+    "test:integration": "vitest run tests/integration",
+    "test:integration:watch": "vitest tests/integration"
   },
   "dependencies": {
     "@radix-ui/react-avatar": "^1.1.4",
@@ -23,6 +29,8 @@
     "@vercel/analytics": "^1.5.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "date-fns": "^4.1.0",
+    "date-fns-tz": "^3.2.0",
     "lucide-react": "^0.268.0",
     "next": "^15.2.4",
     "next-pwa": "^5.6.0",
@@ -40,6 +48,8 @@
     "autoprefixer": "^10.4.21",
     "postcss": "^8.5.3",
     "tailwindcss": "^3.4.17",
-    "typescript": "^5.8.3"
+    "tsx": "^4.21.0",
+    "typescript": "^5.8.3",
+    "vitest": "^4.1.0"
   }
 }

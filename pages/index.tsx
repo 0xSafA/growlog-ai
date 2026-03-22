@@ -7,10 +7,10 @@ export default function HomePage() {
   return (
     <>
       <Head>
-        <title>Daily Focus — Growlog AI</title>
+        <title>Фокус дня — Growlog AI</title>
       </Head>
       <AppRouteReady>
-        <AppShell title="Daily Focus">
+        <AppShell title="Фокус дня">
           <DailyFocus />
         </AppShell>
       </AppRouteReady>

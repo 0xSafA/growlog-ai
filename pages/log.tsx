@@ -119,9 +119,11 @@ function LogTabs() {
   const [mode, setMode] = useState<'text' | 'voice'>('text');
 
   useEffect(() => {
+    if (!router.isReady) return;
     const q = router.query.tab;
     if (q === 'voice') setMode('voice');
-  }, [router.query.tab]);
+    else if (q === undefined || q === '') setMode('text');
+  }, [router.isReady, router.query.tab]);
 
   function switchMode(next: 'text' | 'voice') {
     setMode(next);
