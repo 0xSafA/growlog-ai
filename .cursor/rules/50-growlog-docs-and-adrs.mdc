@@ -1,0 +1,13 @@
+---
+description: Keep docs and ADR-linked behavior consistent
+globs: docs/**/*.md
+alwaysApply: false
+---
+
+# Growlog Docs And ADRs
+
+- Preserve ADR intent when editing docs. If implementation diverges, document the new decision instead of silently drifting.
+- Keep terminology consistent with the canonical model in ADR-002 and the retrieval or trust language from ADR-003 and ADR-004.
+- When documenting AI behavior, separate facts, interpretation, hypotheses, recommendations, missing data, and confidence.
+- When documenting SOP, report, or photo flows, describe deterministic stages and ownership boundaries.
+- Do not document public-access patterns that bypass RLS, tenant isolation, or sanitization.

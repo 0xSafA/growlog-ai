@@ -1,0 +1,16 @@
+---
+description: Daily Focus, capture-first UX, and trust-aware UI guidance
+globs: "**/*.tsx"
+alwaysApply: false
+---
+
+# Growlog UI And UX
+
+- Daily Focus is the default product surface. Do not make assistant or chat the only or primary path to value.
+- Keep `REC` or `ADD EVENT` style capture actions prominent on core screens.
+- Show scope clearly on major surfaces and avoid strong farm-specific guidance when scope is unresolved.
+- UI for actionable AI output must have room for `confidence`, `missing_data`, `grounding`, and alternatives or safe next checks.
+- Present AI output in this order: what is known, what it may mean, what to do next, and what is missing.
+- Never style AI advice as unquestionable fact; ambiguity and weak evidence must stay visible.
+- Use TanStack Query or server data for farm state. Keep Zustand or local state for UI/session ergonomics only.
+- Screens should map to ADR-002 entities instead of inventing parallel nouns or shadow state machines.

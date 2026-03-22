@@ -1,0 +1,14 @@
+---
+description: ADR-aligned domain types and data contracts
+globs: types/**/*.ts
+alwaysApply: false
+---
+
+# Growlog Types And Contracts
+
+- Keep types aligned with ADR vocabulary and table contracts. Rename app code instead of introducing synonyms for canonical entities.
+- Separate source, derived, and public artifact types. Example: `MediaAsset` is not `PhotoAnalysis`, and `Report` is not `ReportArtifact`.
+- Model report axes independently: `report_type`, `audience_type`, `scope`, and `output_format`.
+- Trust-aware AI contracts should expose known facts, missing data, confidence, grounding, and trust flags as first-class fields.
+- Include explicit scope and time fields when data is farm-specific; avoid opaque payload bags that hide `farm_id`, `cycle_id`, `scope_id`, or period.
+- Types for hypotheses, recommendations, and suggestions must stay provisional and must not masquerade as measured fact.

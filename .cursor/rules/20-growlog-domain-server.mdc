@@ -1,0 +1,18 @@
+---
+description: Retrieval, trust, SOP, report, and photo rules for server code
+globs: "**/*.ts"
+alwaysApply: false
+---
+
+# Growlog Domain And Server
+
+- Run retrieval before generation: `scope resolution -> intent -> core context -> intent-specific expansion -> compression`.
+- If farm scope or minimum evidence is missing, return clarification or a safe fallback. Do not fabricate farm-specific answers.
+- Prefer SQL and deterministic scoped queries first; vector search is optional and must not replace explicit filters.
+- Assemble AI context with stable sections such as `scope`, `current_state`, `recent_events`, `sensor_context`, `photo_context`, `sop_context`, `historical_context`, `knowledge_context`, `missing_data`, and `guardrails`.
+- Actionable AI output should use a structured contract with `type`, `facts`, `confidence`, `missing_data`, `grounding`, and `trust_flags`.
+- `facts` contain only retrieved or measured items. Inference belongs in interpretation, hypotheses, or recommendation fields.
+- Run trust checks before persistence or delivery. Low evidence, conflicts, or ambiguous scope should weaken, clarify, or block output.
+- Service-role, cron, Edge, and middleware code must still enforce `farm_id`, role, scope, idempotency, and publish constraints.
+- SOP state is engine-owned: due windows, overdue logic, deduplication, and transitions happen in deterministic code, not the model.
+- Report and photo flows are staged systems: persist source records first, then analyze or assemble, then publish artifacts.

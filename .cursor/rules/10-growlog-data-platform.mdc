@@ -1,0 +1,16 @@
+---
+description: Data model, RLS, storage, and publication constraints
+globs: supabase/**/*.sql
+alwaysApply: false
+---
+
+# Growlog Data Platform
+
+- Default to deny with RLS. Missing policy must never expose tenant rows.
+- Model tenant access through `farm_users` and `user_farm_ids()` style checks; do not open direct client writes into `farms` or membership tables.
+- Keep one temporal spine: dated operational facts belong in `events`; detail tables extend it instead of replacing it.
+- Operational rows should carry `farm_id` and usually `scope_id`; when shortcut columns and `scope_id` disagree, `scope_id` wins.
+- Separate source tables from derived and publication tables. `ai_insights`, photo analysis, reports, and public artifacts must be recomputable or explicitly published.
+- Reuse ADR vocabularies such as `event_type`, report dimensions, and insight types; do not create competing names for the same concept.
+- Public HTML/PDF or shared outputs must come from a publish or sanitization layer, never by weakening RLS on internal tables.
+- Storage policies should mirror Postgres isolation: private buckets, `farm_id` in object paths, and tenant-aware access checks.

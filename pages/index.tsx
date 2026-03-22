@@ -1,16 +1,19 @@
-// pages/index.tsx
-import { withPageAuthRequired } from '@auth0/nextjs-auth0';
-import GrowlogApp from '@/components/GrowlogApp';
-import { ChatWidget } from "@/components/ChatWidget";
+import { AppRouteReady } from '@/components/AppRouteReady';
+import { DailyFocus } from '@/components/daily-focus/DailyFocus';
+import { AppShell } from '@/components/layout/AppShell';
+import Head from 'next/head';
 
-export const getServerSideProps = withPageAuthRequired();
-
-export default function Home() {
+export default function HomePage() {
   return (
-    <main className="min-h-screen flex items-center justify-center bg-background">
-      <ChatWidget />
-    </main>
+    <>
+      <Head>
+        <title>Daily Focus — Growlog AI</title>
+      </Head>
+      <AppRouteReady>
+        <AppShell title="Daily Focus">
+          <DailyFocus />
+        </AppShell>
+      </AppRouteReady>
+    </>
   );
 }
-
-//<GrowlogApp />

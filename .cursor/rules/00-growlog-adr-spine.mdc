@@ -1,0 +1,14 @@
+---
+description: Core ADR spine for all Growlog work
+alwaysApply: true
+---
+
+# Growlog ADR Spine
+
+- Treat database-backed farm data as source of truth. LLM output may explain, summarize, or format, but must not invent or directly persist canonical facts.
+- Resolve `farm_id`, `cycle_id`, `scope_id`, and time window before retrieval, mutation, or farm-specific guidance. If scope is ambiguous, ask or block.
+- Keep ADR-002 canonical entities and naming: `farms`, `grow_cycles`, `scopes`, `events`, `sensor_readings`, `media_assets`, `sop_*`, `ai_insights`, `reports`, `knowledge_*`.
+- Preserve the event/timeline spine: time-based operations should anchor to `events` or a documented derived projection, not a parallel ad-hoc log.
+- Put deterministic checks in code. Access control, retrieval gates, trust checks, persistence rules, and publish boundaries must not depend on model judgment.
+- Prefer append/recompute flows over silent overwrites of meaningful history.
+- If a change alters ADR-governed behavior, update the relevant file in `docs/adr/` or `docs/implementation/` in the same task.
