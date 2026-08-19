@@ -2,27 +2,21 @@
 
 import { AppRouteReady } from '@/components/AppRouteReady';
 import { AppShell } from '@/components/layout/AppShell';
+import { PageHead } from '@/components/layout/PageHead';
 import { useFarmContext } from '@/components/providers/FarmProvider';
+import { useTranslation } from '@/components/providers/I18nProvider';
 import { fetchSopRunById, SOP_RUNS_QUERY_KEY } from '@/lib/growlog/sop-queries';
 import { executeSopRun } from '@/lib/growlog/sop-mutations';
 import type { SopExecutionStatus } from '@/types/sop';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import Head from 'next/head';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import { useState } from 'react';
-
-const STATUSES: { value: SopExecutionStatus; label: string }[] = [
-  { value: 'done', label: 'Выполнено' },
-  { value: 'delayed', label: 'Отложено' },
-  { value: 'partially_done', label: 'Частично' },
-  { value: 'skipped', label: 'Пропуск' },
-  { value: 'blocked', label: 'Блокер' },
-];
+import { useMemo, useState } from 'react';
 
 function SopRunInner({ runId }: { runId: string }) {
+  const { t } = useTranslation();
   const router = useRouter();
   const queryClient = useQueryClient();
   const { supabase, farmId, cycle, primaryScope, userId } = useFarmContext();
@@ -32,6 +26,18 @@ function SopRunInner({ runId }: { runId: string }) {
   const [evidenceJson, setEvidenceJson] = useState('{}');
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+
+  const statuses = useMemo(
+    () =>
+      [
+        { value: 'done' as const, label: t('sop.statusDone') },
+        { value: 'delayed' as const, label: t('sop.statusDelayed') },
+        { value: 'partially_done' as const, label: t('sop.statusPartial') },
+        { value: 'skipped' as const, label: t('sop.statusSkipped') },
+        { value: 'blocked' as const, label: t('sop.statusBlocked') },
+      ] satisfies { value: SopExecutionStatus; label: string }[],
+    [t]
+  );
 
   const runQuery = useQuery({
     queryKey: ['sop-run', runId],
@@ -53,7 +59,7 @@ function SopRunInner({ runId }: { runId: string }) {
         measuredValues = JSON.parse(measuredJson || '{}') as Record<string, unknown>;
         evidence = JSON.parse(evidenceJson || '{}') as Record<string, unknown>;
       } catch {
-        setError('Некорректный JSON в полях замеров / evidence');
+        setError(t('sop.invalidJson'));
         setPending(false);
         return;
       }
@@ -71,18 +77,18 @@ function SopRunInner({ runId }: { runId: string }) {
       await queryClient.invalidateQueries({ queryKey: [SOP_RUNS_QUERY_KEY] });
       await router.push('/sop');
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Ошибка');
+      setError(err instanceof Error ? err.message : t('common.error'));
     } finally {
       setPending(false);
     }
   }
 
   if (runQuery.isLoading) {
-    return <p className="text-muted-foreground">Загрузка…</p>;
+    return <p className="text-muted-foreground">{t('common.loading')}</p>;
   }
 
   if (!run) {
-    return <p className="text-destructive">Задача не найдена.</p>;
+    return <p className="text-destructive">{t('sop.runNotFound')}</p>;
   }
 
   const defTitle =
@@ -90,16 +96,28 @@ function SopRunInner({ runId }: { runId: string }) {
       ? (run.sop_definitions as { title: string }).title
       : 'SOP';
 
+  const dueDescription =
+    run.due_window_start && run.due_window_end
+      ? t('sop.dueWindow', {
+          start: new Date(run.due_window_start).toLocaleString(),
+          end: new Date(run.due_window_end).toLocaleString(),
+        })
+      : run.due_at
+        ? t('sop.dueAt', { date: new Date(run.due_at).toLocaleString() })
+        : t('sop.noDue');
+
   if (!['open', 'acknowledged', 'overdue'].includes(run.status)) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Уже закрыто</CardTitle>
-          <CardDescription>Статус: {run.status}</CardDescription>
+          <CardTitle>{t('sop.alreadyClosed')}</CardTitle>
+          <CardDescription>
+            {t('sop.status')} {run.status}
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <Button asChild variant="outline">
-            <Link href="/sop">К списку</Link>
+            <Link href="/sop">{t('sop.backToList')}</Link>
           </Button>
         </CardContent>
       </Card>
@@ -111,24 +129,19 @@ function SopRunInner({ runId }: { runId: string }) {
       <CardHeader>
         <CardTitle>{defTitle}</CardTitle>
         <CardDescription>
-          Исполнение SOP run ·{' '}
-          {run.due_window_start && run.due_window_end
-            ? `окно ${new Date(run.due_window_start).toLocaleString()} — ${new Date(run.due_window_end).toLocaleString()}`
-            : run.due_at
-              ? `срок ${new Date(run.due_at).toLocaleString()}`
-              : 'срок не задан'}
+          {t('sop.executionDesc')} · {dueDescription}
         </CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={submit} className="space-y-4">
           <div className="space-y-2">
-            <label className="text-sm font-medium">Статус исполнения</label>
+            <label className="text-sm font-medium">{t('sop.executionStatusLabel')}</label>
             <select
               className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
               value={executionStatus}
               onChange={(e) => setExecutionStatus(e.target.value as SopExecutionStatus)}
             >
-              {STATUSES.map((s) => (
+              {statuses.map((s) => (
                 <option key={s.value} value={s.value}>
                   {s.label}
                 </option>
@@ -136,16 +149,16 @@ function SopRunInner({ runId }: { runId: string }) {
             </select>
           </div>
           <div className="space-y-2">
-            <label className="text-sm font-medium">Заметки</label>
+            <label className="text-sm font-medium">{t('sop.notes')}</label>
             <textarea
               className="flex min-h-[100px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="Факты, замеры, что сделали"
+              placeholder={t('sop.notesPlaceholder')}
             />
           </div>
           <div className="space-y-2">
-            <label className="text-sm font-medium">Замеры (JSON, ключи из required_inputs)</label>
+            <label className="text-sm font-medium">{t('sop.measuredJsonLabel')}</label>
             <textarea
               className="flex min-h-[72px] w-full rounded-md border border-input bg-background px-3 py-2 font-mono text-xs"
               value={measuredJson}
@@ -154,7 +167,7 @@ function SopRunInner({ runId }: { runId: string }) {
             />
           </div>
           <div className="space-y-2">
-            <label className="text-sm font-medium">Evidence (JSON, фото и т.п.)</label>
+            <label className="text-sm font-medium">{t('sop.evidenceJsonLabel')}</label>
             <textarea
               className="flex min-h-[72px] w-full rounded-md border border-input bg-background px-3 py-2 font-mono text-xs"
               value={evidenceJson}
@@ -165,10 +178,10 @@ function SopRunInner({ runId }: { runId: string }) {
           {error && <p className="text-sm text-destructive">{error}</p>}
           <div className="flex flex-wrap gap-2">
             <Button type="submit" disabled={pending}>
-              {pending ? 'Сохранение…' : 'Зафиксировать'}
+              {pending ? t('common.saving') : t('sop.recordExecution')}
             </Button>
             <Button type="button" variant="outline" asChild>
-              <Link href="/sop">Отмена</Link>
+              <Link href="/sop">{t('common.cancel')}</Link>
             </Button>
           </div>
         </form>
@@ -177,20 +190,25 @@ function SopRunInner({ runId }: { runId: string }) {
   );
 }
 
+function SopRunPageBody({ runId }: { runId: string }) {
+  const { t } = useTranslation();
+  return (
+    <>
+      <PageHead titleKey="titles.sopRun" />
+      <AppShell title={t('titles.sopRun')}>
+        {runId ? <SopRunInner runId={runId} /> : <p className="text-muted-foreground">{t('common.loading')}</p>}
+      </AppShell>
+    </>
+  );
+}
+
 export default function SopRunPage() {
   const router = useRouter();
   const id = typeof router.query.id === 'string' ? router.query.id : '';
 
   return (
-    <>
-      <Head>
-        <title>Исполнение SOP — Growlog AI</title>
-      </Head>
-      <AppRouteReady>
-        <AppShell title="Исполнение SOP">
-          {id ? <SopRunInner runId={id} /> : <p className="text-muted-foreground">…</p>}
-        </AppShell>
-      </AppRouteReady>
-    </>
+    <AppRouteReady>
+      <SopRunPageBody runId={id} />
+    </AppRouteReady>
   );
 }

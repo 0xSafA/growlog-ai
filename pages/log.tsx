@@ -2,14 +2,15 @@
 
 import { AppRouteReady } from '@/components/AppRouteReady';
 import { AppShell } from '@/components/layout/AppShell';
+import { PageHead } from '@/components/layout/PageHead';
 import { VoiceLogFlow } from '@/components/voice/VoiceLogFlow';
 import { useFarmContext } from '@/components/providers/FarmProvider';
+import { useTranslation } from '@/components/providers/I18nProvider';
 import { createLogEntry } from '@/lib/growlog/mutations';
 import type { EventType, SourceType } from '@/types/domain';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import Head from 'next/head';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
@@ -24,6 +25,7 @@ const QUICK_TYPES: EventType[] = [
 ];
 
 function LogForm() {
+  const { t } = useTranslation();
   const { supabase, farmId, cycle, primaryScope, refetchAll, userId } = useFarmContext();
   const [eventType, setEventType] = useState<EventType>('note');
   const [body, setBody] = useState('');
@@ -53,50 +55,50 @@ function LogForm() {
       setBody('');
       await refetchAll();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Ошибка сохранения');
+      setError(err instanceof Error ? err.message : t('log.saveFailed'));
     } finally {
       setPending(false);
     }
   }
 
   if (!cycle || !primaryScope) {
-    return <p className="text-muted-foreground">Сначала завершите онбординг с циклом.</p>;
+    return <p className="text-muted-foreground">{t('log.needOnboarding')}</p>;
   }
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Текстовая запись</CardTitle>
-        <CardDescription>Событие попадёт в `events` с привязкой к scope (ADR-001).</CardDescription>
+        <CardTitle>{t('log.textTitle')}</CardTitle>
+        <CardDescription>{t('log.textDesc')}</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={submit} className="space-y-4">
           <div className="space-y-2">
-            <label className="text-sm font-medium">Тип события</label>
+            <label className="text-sm font-medium">{t('log.eventType')}</label>
             <select
               className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
               value={eventType}
               onChange={(e) => setEventType(e.target.value as EventType)}
             >
-              {QUICK_TYPES.map((t) => (
-                <option key={t} value={t}>
-                  {t.replace(/_/g, ' ')}
+              {QUICK_TYPES.map((type) => (
+                <option key={type} value={type}>
+                  {type.replace(/_/g, ' ')}
                 </option>
               ))}
             </select>
           </div>
           <div className="space-y-2">
-            <label className="text-sm font-medium">Текст</label>
+            <label className="text-sm font-medium">{t('common.text')}</label>
             <textarea
               className="flex min-h-[120px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
               value={body}
               onChange={(e) => setBody(e.target.value)}
               required
-              placeholder="Что произошло, что сделали, что заметили"
+              placeholder={t('log.bodyPlaceholder')}
             />
           </div>
           <div className="space-y-2">
-            <label className="text-sm font-medium">Когда (локальное время)</label>
+            <label className="text-sm font-medium">{t('common.whenLocal')}</label>
             <Input
               type="datetime-local"
               value={occurredAt}
@@ -106,7 +108,7 @@ function LogForm() {
           </div>
           {error && <p className="text-sm text-destructive">{error}</p>}
           <Button type="submit" disabled={pending}>
-            {pending ? 'Сохранение…' : 'Сохранить в журнал'}
+            {pending ? t('common.saving') : t('log.submit')}
           </Button>
         </form>
       </CardContent>
@@ -115,6 +117,7 @@ function LogForm() {
 }
 
 function LogTabs() {
+  const { t } = useTranslation();
   const router = useRouter();
   const [mode, setMode] = useState<'text' | 'voice'>('text');
 
@@ -145,7 +148,7 @@ function LogTabs() {
           )}
           onClick={() => switchMode('text')}
         >
-          Текст
+          {t('common.text')}
         </button>
         <button
           type="button"
@@ -155,7 +158,7 @@ function LogTabs() {
           )}
           onClick={() => switchMode('voice')}
         >
-          Голос
+          {t('common.voice')}
         </button>
       </div>
       {mode === 'text' ? <LogForm /> : <VoiceLogFlow />}
@@ -163,17 +166,22 @@ function LogTabs() {
   );
 }
 
-export default function LogPage() {
+function LogPageBody() {
+  const { t } = useTranslation();
   return (
     <>
-      <Head>
-        <title>Запись — Growlog AI</title>
-      </Head>
-      <AppRouteReady>
-        <AppShell title="Запись">
-          <LogTabs />
-        </AppShell>
-      </AppRouteReady>
+      <PageHead titleKey="titles.log" />
+      <AppShell title={t('titles.log')}>
+        <LogTabs />
+      </AppShell>
     </>
+  );
+}
+
+export default function LogPage() {
+  return (
+    <AppRouteReady>
+      <LogPageBody />
+    </AppRouteReady>
   );
 }

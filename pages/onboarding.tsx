@@ -1,16 +1,19 @@
 'use client';
 
 import { useFarmContext } from '@/components/providers/FarmProvider';
+import { useTranslation } from '@/components/providers/I18nProvider';
 import { createFoundationSetup } from '@/lib/growlog/mutations';
+import { PageHead } from '@/components/layout/PageHead';
+import { LanguageSwitcher } from '@/components/layout/LanguageSwitcher';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import Head from 'next/head';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 
 export default function OnboardingPage() {
   const router = useRouter();
+  const { t } = useTranslation();
   const { supabase, authLoading, userId, farms, farmListReady, refetchAll } = useFarmContext();
   const [farmName, setFarmName] = useState('');
   const [tz, setTz] = useState(
@@ -18,7 +21,7 @@ export default function OnboardingPage() {
       ? Intl.DateTimeFormat().resolvedOptions().timeZone
       : 'UTC'
   );
-  const [cycleName, setCycleName] = useState('Цикл 1');
+  const [cycleName, setCycleName] = useState(t('onboarding.defaultCycleName'));
   const [cultivar, setCultivar] = useState('');
   const [stage, setStage] = useState('veg');
   const [error, setError] = useState<string | null>(null);
@@ -48,7 +51,7 @@ export default function OnboardingPage() {
       await createFoundationSetup(supabase, {
         farmName: farmName.trim(),
         timezone: tz,
-        cycleName: cycleName.trim() || 'Цикл 1',
+        cycleName: cycleName.trim() || t('onboarding.defaultCycleName'),
         cultivarName: cultivar.trim() || undefined,
         startDate: start,
         stage,
@@ -56,7 +59,7 @@ export default function OnboardingPage() {
       await refetchAll();
       await router.replace('/dashboard');
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Ошибка');
+      setError(err instanceof Error ? err.message : t('common.error'));
     } finally {
       setPending(false);
     }
@@ -65,44 +68,43 @@ export default function OnboardingPage() {
   if (authLoading || !userId) {
     return (
       <div className="flex min-h-screen items-center justify-center text-muted-foreground">
-        Загрузка…
+        {t('common.loading')}
       </div>
     );
   }
 
   return (
     <>
-      <Head>
-        <title>Онбординг — Growlog AI</title>
-      </Head>
+      <PageHead titleKey="titles.onboarding" />
       <div className="mx-auto flex min-h-screen max-w-lg flex-col justify-center px-4 py-12">
+        <div className="mb-4 flex justify-end">
+          <LanguageSwitcher />
+        </div>
         <Card>
           <CardHeader>
-            <CardTitle>Первая ферма</CardTitle>
-            <CardDescription>
-              Foundation MVP (ADR-001): ферма → активный цикл → scope «Main» для журнала.
-            </CardDescription>
+            <CardTitle>{t('onboarding.title')}</CardTitle>
+            <CardDescription>{t('onboarding.description')}</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleCreate} className="space-y-4">
               <div className="space-y-2">
-                <label className="text-sm font-medium">Название фермы / сетапа</label>
+                <label className="text-sm font-medium">{t('onboarding.farmName')}</label>
                 <Input value={farmName} onChange={(e) => setFarmName(e.target.value)} required />
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium">Таймзона</label>
+                <label className="text-sm font-medium">{t('onboarding.timezone')}</label>
                 <Input value={tz} onChange={(e) => setTz(e.target.value)} required />
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium">Название цикла</label>
+                <label className="text-sm font-medium">{t('onboarding.cycleName')}</label>
                 <Input value={cycleName} onChange={(e) => setCycleName(e.target.value)} />
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium">Сорт (опционально)</label>
+                <label className="text-sm font-medium">{t('onboarding.cultivar')}</label>
                 <Input value={cultivar} onChange={(e) => setCultivar(e.target.value)} />
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium">Стадия</label>
+                <label className="text-sm font-medium">{t('onboarding.stage')}</label>
                 <select
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                   value={stage}
@@ -118,7 +120,7 @@ export default function OnboardingPage() {
               </div>
               {error && <p className="text-sm text-destructive">{error}</p>}
               <Button type="submit" className="w-full" disabled={pending}>
-                {pending ? 'Создание…' : 'Создать ферму и цикл'}
+                {pending ? t('common.creating') : t('onboarding.submit')}
               </Button>
             </form>
           </CardContent>

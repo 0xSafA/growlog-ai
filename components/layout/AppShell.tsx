@@ -2,7 +2,9 @@
 
 import { CaptureFab } from '@/components/layout/CaptureFab';
 import { ContextScopeBar } from '@/components/layout/ContextScopeBar';
+import { LanguageSwitcher } from '@/components/layout/LanguageSwitcher';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import { useTranslation } from '@/components/providers/I18nProvider';
 import { Button } from '@/components/ui/button';
 import { useFarmContext } from '@/components/providers/FarmProvider';
 import { cn } from '@/lib/utils';
@@ -19,15 +21,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-
-/** ADR-005: five core modes; capture is the FAB, not a sixth tab. */
-const nav = [
-  { href: '/dashboard', label: 'Фокус', icon: Home },
-  { href: '/timeline', label: 'Таймлайн', icon: List },
-  { href: '/assistant', label: 'ИИ', icon: MessageCircle, modeTitle: 'Ассистент' },
-  { href: '/sop', label: 'SOP', icon: ClipboardCheck },
-  { href: '/reports', label: 'Отчёты', icon: FileText },
-];
+import { useMemo } from 'react';
 
 function isNavActive(pathname: string, href: string) {
   if (href === '/dashboard') return pathname === '/dashboard';
@@ -42,8 +36,25 @@ export function AppShell({
   title: string;
 }) {
   const { pathname } = useRouter();
+  const { t } = useTranslation();
   const { supabase, farms, farmId, setFarmId } = useFarmContext();
   const showCaptureFab = pathname !== '/log';
+
+  const nav = useMemo(
+    () => [
+      { href: '/dashboard', label: t('nav.focus'), icon: Home },
+      { href: '/timeline', label: t('nav.timeline'), icon: List },
+      {
+        href: '/assistant',
+        label: t('nav.ai'),
+        icon: MessageCircle,
+        modeTitle: t('nav.aiTitle'),
+      },
+      { href: '/sop', label: t('nav.sop'), icon: ClipboardCheck },
+      { href: '/reports', label: t('nav.reports'), icon: FileText },
+    ],
+    [t]
+  );
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
@@ -51,7 +62,7 @@ export function AppShell({
         <div className="mx-auto flex max-w-3xl flex-col gap-2 px-4 py-3">
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0 flex-1">
-              <p className="text-xs uppercase tracking-widest text-muted-foreground">Growlog AI</p>
+              <p className="text-xs uppercase tracking-widest text-muted-foreground">{t('appName')}</p>
               <h1 className="truncate text-lg font-semibold leading-tight">{title}</h1>
             </div>
             <div className="flex shrink-0 items-center gap-0.5 sm:gap-1">
@@ -68,19 +79,20 @@ export function AppShell({
                   ))}
                 </select>
               )}
+              <LanguageSwitcher compact />
               <Button variant="ghost" size="icon" className="h-9 w-9" asChild>
-                <Link href="/photos" aria-label="Фото">
+                <Link href="/photos" aria-label={t('nav.photos')}>
                   <Camera className="h-5 w-5" />
                 </Link>
               </Button>
               <Button variant="ghost" size="icon" className="h-9 w-9" asChild>
-                <Link href="/sensors" aria-label="Сенсоры">
+                <Link href="/sensors" aria-label={t('nav.sensors')}>
                   <Thermometer className="h-5 w-5" />
                 </Link>
               </Button>
               <ThemeToggle />
               <Button variant="ghost" size="icon" asChild>
-                <Link href="/settings" aria-label="Настройки">
+                <Link href="/settings" aria-label={t('nav.settings')}>
                   <Settings2 className="h-5 w-5" />
                 </Link>
               </Button>
@@ -88,7 +100,7 @@ export function AppShell({
                 variant="ghost"
                 size="icon"
                 type="button"
-                aria-label="Выйти"
+                aria-label={t('nav.logout')}
                 onClick={() => supabase.auth.signOut()}
               >
                 <LogOut className="h-5 w-5" />

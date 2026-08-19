@@ -2,17 +2,19 @@
 
 import { AppRouteReady } from '@/components/AppRouteReady';
 import { AppShell } from '@/components/layout/AppShell';
+import { PageHead } from '@/components/layout/PageHead';
 import { useFarmContext } from '@/components/providers/FarmProvider';
+import { useTranslation } from '@/components/providers/I18nProvider';
 import { fetchGlobalSensorMetrics } from '@/lib/growlog/queries';
 import { createManualSensorReading } from '@/lib/growlog/mutations';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import Head from 'next/head';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 
 function SensorForm() {
+  const { t } = useTranslation();
   const { supabase, farmId, cycle, primaryScope, refetchAll, userId } = useFarmContext();
   const metricsQuery = useQuery({
     queryKey: ['sensor-metrics-global'],
@@ -34,7 +36,7 @@ function SensorForm() {
     setPending(true);
     try {
       const num = parseFloat(value.replace(',', '.'));
-      if (Number.isNaN(num)) throw new Error('Введите число');
+      if (Number.isNaN(num)) throw new Error(t('common.enterNumber'));
       const iso = new Date(capturedAt).toISOString();
       await createManualSensorReading(supabase, {
         farmId,
@@ -49,39 +51,37 @@ function SensorForm() {
       setValue('');
       await refetchAll();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Ошибка');
+      setError(err instanceof Error ? err.message : t('common.error'));
     } finally {
       setPending(false);
     }
   }
 
   if (!cycle || !primaryScope) {
-    return <p className="text-muted-foreground">Нужен активный цикл.</p>;
+    return <p className="text-muted-foreground">{t('common.needActiveCycle')}</p>;
   }
 
   if (metricsQuery.isLoading) {
-    return <p className="text-muted-foreground">Загрузка метрик…</p>;
+    return <p className="text-muted-foreground">{t('sensors.loadingMetrics')}</p>;
   }
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Ручной замер</CardTitle>
-        <CardDescription>
-          Создаётся `sensor_readings` и событие `sensor_snapshot` с связью через `event_entities`.
-        </CardDescription>
+        <CardTitle>{t('sensors.title')}</CardTitle>
+        <CardDescription>{t('sensors.desc')}</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={submit} className="space-y-4">
           <div className="space-y-2">
-            <label className="text-sm font-medium">Метрика</label>
+            <label className="text-sm font-medium">{t('sensors.metric')}</label>
             <select
               className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
               value={metricId}
               onChange={(e) => setMetricId(e.target.value)}
               required
             >
-              <option value="">Выберите…</option>
+              <option value="">{t('sensors.selectMetric')}</option>
               {(metricsQuery.data ?? []).map((m) => (
                 <option key={m.id} value={m.id}>
                   {m.name} ({m.metric_code}){m.unit ? `, ${m.unit}` : ''}
@@ -90,7 +90,7 @@ function SensorForm() {
             </select>
           </div>
           <div className="space-y-2">
-            <label className="text-sm font-medium">Значение</label>
+            <label className="text-sm font-medium">{t('sensors.value')}</label>
             <Input
               type="text"
               inputMode="decimal"
@@ -100,7 +100,7 @@ function SensorForm() {
             />
           </div>
           <div className="space-y-2">
-            <label className="text-sm font-medium">Время замера</label>
+            <label className="text-sm font-medium">{t('sensors.capturedAt')}</label>
             <Input
               type="datetime-local"
               value={capturedAt}
@@ -110,7 +110,7 @@ function SensorForm() {
           </div>
           {error && <p className="text-sm text-destructive">{error}</p>}
           <Button type="submit" disabled={pending}>
-            {pending ? 'Сохранение…' : 'Сохранить замер'}
+            {pending ? t('common.saving') : t('sensors.submit')}
           </Button>
         </form>
       </CardContent>
@@ -118,17 +118,22 @@ function SensorForm() {
   );
 }
 
-export default function SensorsPage() {
+function SensorsPageBody() {
+  const { t } = useTranslation();
   return (
     <>
-      <Head>
-        <title>Сенсоры — Growlog AI</title>
-      </Head>
-      <AppRouteReady>
-        <AppShell title="Сенсоры">
-          <SensorForm />
-        </AppShell>
-      </AppRouteReady>
+      <PageHead titleKey="titles.sensors" />
+      <AppShell title={t('titles.sensors')}>
+        <SensorForm />
+      </AppShell>
     </>
+  );
+}
+
+export default function SensorsPage() {
+  return (
+    <AppRouteReady>
+      <SensorsPageBody />
+    </AppRouteReady>
   );
 }

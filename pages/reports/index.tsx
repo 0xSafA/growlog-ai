@@ -2,19 +2,21 @@
 
 import { AppRouteReady } from '@/components/AppRouteReady';
 import { AppShell } from '@/components/layout/AppShell';
+import { PageHead } from '@/components/layout/PageHead';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { useFarmContext } from '@/components/providers/FarmProvider';
+import { useTranslation } from '@/components/providers/I18nProvider';
 import { fetchReportsForFarm } from '@/lib/growlog/report-queries';
 import { AUDIENCE_TYPES, OUTPUT_FORMATS, REPORT_TYPES } from '@/types/report';
 import { useQuery } from '@tanstack/react-query';
 import { formatInTimeZone } from 'date-fns-tz';
-import Head from 'next/head';
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
 
 function ReportsInner() {
+  const { t } = useTranslation();
   const { supabase, farmId, cycle, primaryScope, farms } = useFarmContext();
   const farm = farms.find((f) => f.id === farmId);
   const tz = farm?.timezone ?? 'UTC';
@@ -46,7 +48,7 @@ function ReportsInner() {
     try {
       const { data: sessionData } = await supabase.auth.getSession();
       const token = sessionData.session?.access_token;
-      if (!token) throw new Error('Нет сессии');
+      if (!token) throw new Error(t('advisor.noSession'));
       const res = await fetch('/api/reports/generate', {
         method: 'POST',
         headers: {
@@ -74,7 +76,7 @@ function ReportsInner() {
         window.location.href = `/reports/${j.reportId}`;
       }
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Ошибка');
+      setError(e instanceof Error ? e.message : t('common.error'));
     } finally {
       setBusy(false);
     }
@@ -83,12 +85,10 @@ function ReportsInner() {
   if (!cycle) {
     return (
       <div className="rounded-lg border border-dashed border-border/80 bg-muted/20 px-4 py-8 text-center">
-        <p className="text-sm font-medium text-foreground">Нужен активный цикл</p>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Отчёт строится по событиям цикла. Создайте цикл в онбординге или настройках.
-        </p>
+        <p className="text-sm font-medium text-foreground">{t('common.needActiveCycle')}</p>
+        <p className="mt-2 text-sm text-muted-foreground">{t('reports.needCycleDesc')}</p>
         <Button asChild className="mt-4" size="sm" variant="secondary">
-          <Link href="/onboarding">Настроить ферму</Link>
+          <Link href="/onboarding">{t('dailyFocus.setupFarm')}</Link>
         </Button>
       </div>
     );
@@ -97,71 +97,71 @@ function ReportsInner() {
   return (
     <div className="space-y-8">
       <p className="text-sm text-muted-foreground">
-        Отчёты собираются из той же истории, что и таймлайн — не из отдельного редактора. При
-        нехватке событий сначала накопите журнал.{' '}
+        {t('reports.intro')}{' '}
         <Link href="/timeline" className="text-primary underline underline-offset-2">
-          Таймлайн
+          {t('reports.timelineLink')}
         </Link>
       </p>
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Новый отчёт</CardTitle>
-          <CardDescription>
-            Запрос создаёт черновик и ставит фоновую задачу <code className="text-xs">report.generate</code>
-            .
-          </CardDescription>
+          <CardTitle className="text-base">{t('reports.newTitle')}</CardTitle>
+          <CardDescription>{t('reports.newDescWorker')}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-1">
-              <label className="text-sm font-medium">Тип</label>
+              <label className="text-sm font-medium">{t('reports.type')}</label>
               <select
                 className="w-full rounded-md border border-input bg-background px-2 py-2 text-sm"
                 value={reportType}
                 onChange={(e) => setReportType(e.target.value)}
               >
-                {REPORT_TYPES.map((t) => (
-                  <option key={t} value={t}>
-                    {t}
+                {REPORT_TYPES.map((type) => (
+                  <option key={type} value={type}>
+                    {type}
                   </option>
                 ))}
               </select>
             </div>
             <div className="space-y-1">
-              <label className="text-sm font-medium">Аудитория</label>
+              <label className="text-sm font-medium">{t('reports.audience')}</label>
               <select
                 className="w-full rounded-md border border-input bg-background px-2 py-2 text-sm"
                 value={audienceType}
                 onChange={(e) => setAudienceType(e.target.value)}
               >
-                {AUDIENCE_TYPES.map((t) => (
-                  <option key={t} value={t}>
-                    {t}
+                {AUDIENCE_TYPES.map((type) => (
+                  <option key={type} value={type}>
+                    {type}
                   </option>
                 ))}
               </select>
             </div>
             <div className="space-y-1">
-              <label className="text-sm font-medium">Формат вывода</label>
+              <label className="text-sm font-medium">{t('reports.outputFormat')}</label>
               <select
                 className="w-full rounded-md border border-input bg-background px-2 py-2 text-sm"
                 value={outputFormat}
                 onChange={(e) => setOutputFormat(e.target.value)}
               >
-                {OUTPUT_FORMATS.map((t) => (
-                  <option key={t} value={t}>
-                    {t}
+                {OUTPUT_FORMATS.map((type) => (
+                  <option key={type} value={type}>
+                    {type}
                   </option>
                 ))}
               </select>
             </div>
             <div className="space-y-1">
-              <label className="text-sm font-medium">Заголовок (опц.)</label>
-              <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Авто" />
+              <label className="text-sm font-medium">{t('reports.titleOptional')}</label>
+              <Input
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder={t('reports.titleAuto')}
+              />
             </div>
             <div className="space-y-1">
-              <label className="text-sm font-medium">Начало периода</label>
+              <label className="text-sm font-medium">{t('reports.periodStart')}</label>
               <Input
                 type="date"
                 value={startDate}
@@ -169,31 +169,28 @@ function ReportsInner() {
               />
             </div>
             <div className="space-y-1">
-              <label className="text-sm font-medium">Конец периода</label>
+              <label className="text-sm font-medium">{t('reports.periodEnd')}</label>
               <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
             </div>
           </div>
           {error && <p className="text-sm text-destructive">{error}</p>}
           <Button type="button" onClick={onGenerate} disabled={busy}>
-            {busy ? 'Отправка…' : 'Собрать отчёт'}
+            {busy ? t('reports.submitting') : t('reports.build')}
           </Button>
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Последние отчёты</CardTitle>
-          <CardDescription>Статус обновится после worker.</CardDescription>
+          <CardTitle className="text-base">{t('reports.recentTitle')}</CardTitle>
+          <CardDescription>{t('reports.recentDesc')}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-2">
           {listQuery.isLoading && (
-            <p className="text-sm text-muted-foreground">Загрузка…</p>
+            <p className="text-sm text-muted-foreground">{t('common.loading')}</p>
           )}
           {listQuery.data?.length === 0 && (
-            <p className="text-sm text-muted-foreground">
-              Пока нет готовых отчётов. Если в журнале мало записей, материала для отчёта может не
-              хватить — начните с фокуса дня и таймлайна.
-            </p>
+            <p className="text-sm text-muted-foreground">{t('reports.noReportsHint')}</p>
           )}
           <ul className="space-y-2">
             {listQuery.data?.map((r) => (
@@ -216,17 +213,22 @@ function ReportsInner() {
   );
 }
 
-export default function ReportsIndexPage() {
+function ReportsPageBody() {
+  const { t } = useTranslation();
   return (
     <>
-      <Head>
-        <title>Отчёты — Growlog AI</title>
-      </Head>
-      <AppRouteReady>
-        <AppShell title="Отчёты">
-          <ReportsInner />
-        </AppShell>
-      </AppRouteReady>
+      <PageHead titleKey="titles.reports" />
+      <AppShell title={t('titles.reports')}>
+        <ReportsInner />
+      </AppShell>
     </>
+  );
+}
+
+export default function ReportsIndexPage() {
+  return (
+    <AppRouteReady>
+      <ReportsPageBody />
+    </AppRouteReady>
   );
 }

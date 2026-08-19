@@ -2,28 +2,28 @@
 
 import { AppRouteReady } from '@/components/AppRouteReady';
 import { AppShell } from '@/components/layout/AppShell';
+import { PageHead } from '@/components/layout/PageHead';
 import { Button } from '@/components/ui/button';
 import { useFarmContext } from '@/components/providers/FarmProvider';
-import Head from 'next/head';
+import { useTranslation } from '@/components/providers/I18nProvider';
 import Link from 'next/link';
 import { ListTree, MessageCircle } from 'lucide-react';
 
 function TimelineBody() {
+  const { t } = useTranslation();
   const { recentEvents, cycle, loading } = useFarmContext();
 
   if (loading) {
-    return <p className="text-muted-foreground">Загрузка…</p>;
+    return <p className="text-muted-foreground">{t('timeline.loading')}</p>;
   }
 
   if (!cycle) {
     return (
       <div className="rounded-lg border border-dashed border-border/80 bg-muted/20 px-4 py-8 text-center">
-        <p className="text-sm font-medium text-foreground">Нет активного цикла</p>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Таймлайн привязан к циклу выращивания. Создайте цикл в онбординге или настройках.
-        </p>
+        <p className="text-sm font-medium text-foreground">{t('timeline.noCycleTitle')}</p>
+        <p className="mt-2 text-sm text-muted-foreground">{t('timeline.noCycleDesc')}</p>
         <Button asChild className="mt-4" size="sm">
-          <Link href="/onboarding">Настроить</Link>
+          <Link href="/onboarding">{t('timeline.setup')}</Link>
         </Button>
       </div>
     );
@@ -32,9 +32,8 @@ function TimelineBody() {
   return (
     <div className="space-y-4">
       <p className="text-sm text-muted-foreground">
-        Хронология событий цикла{' '}
-        <span className="text-foreground font-medium">{cycle.name}</span> — источник фактов для
-        ассистента и отчётов.
+        {t('timeline.intro')}{' '}
+        <span className="text-foreground font-medium">{cycle.name}</span> {t('timeline.introSuffix')}
       </p>
       {recentEvents.length > 0 && (
         <ul className="space-y-4">
@@ -62,16 +61,14 @@ function TimelineBody() {
       {recentEvents.length === 0 && (
         <div className="rounded-lg border border-dashed border-border/80 bg-muted/20 px-4 py-8 text-center">
           <ListTree className="mx-auto mb-3 h-10 w-10 text-muted-foreground/60" />
-          <p className="text-sm font-medium text-foreground">История пока пуста</p>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Зафиксируйте первое событие — кнопка «Запись» внизу экрана или голос / фото.
-          </p>
+          <p className="text-sm font-medium text-foreground">{t('timeline.emptyTitle')}</p>
+          <p className="mt-1 text-sm text-muted-foreground">{t('timeline.emptyDesc')}</p>
           <div className="mt-4 flex flex-wrap justify-center gap-2">
             <Button asChild size="sm">
-              <Link href="/log">Открыть запись</Link>
+              <Link href="/log">{t('timeline.openLog')}</Link>
             </Button>
             <Button asChild size="sm" variant="secondary">
-              <Link href="/photos">Загрузить фото</Link>
+              <Link href="/photos">{t('timeline.uploadPhoto')}</Link>
             </Button>
           </div>
         </div>
@@ -81,7 +78,7 @@ function TimelineBody() {
           <Button asChild variant="outline" size="sm">
             <Link href="/assistant">
               <MessageCircle className="mr-2 h-4 w-4" />
-              Объяснить по истории
+              {t('timeline.explainHistory')}
             </Link>
           </Button>
         </div>
@@ -90,17 +87,22 @@ function TimelineBody() {
   );
 }
 
-export default function TimelinePage() {
+function TimelinePageBody() {
+  const { t } = useTranslation();
   return (
     <>
-      <Head>
-        <title>Таймлайн — Growlog AI</title>
-      </Head>
-      <AppRouteReady>
-        <AppShell title="Таймлайн">
-          <TimelineBody />
-        </AppShell>
-      </AppRouteReady>
+      <PageHead titleKey="titles.timeline" />
+      <AppShell title={t('titles.timeline')}>
+        <TimelineBody />
+      </AppShell>
     </>
+  );
+}
+
+export default function TimelinePage() {
+  return (
+    <AppRouteReady>
+      <TimelinePageBody />
+    </AppRouteReady>
   );
 }

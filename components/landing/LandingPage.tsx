@@ -1,8 +1,10 @@
 'use client';
 
 import { ThemeToggle } from '@/components/ThemeToggle';
+import { LanguageSwitcher } from '@/components/layout/LanguageSwitcher';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useTranslation } from '@/components/providers/I18nProvider';
 import { useFarmContext } from '@/components/providers/FarmProvider';
 import {
   Brain,
@@ -16,65 +18,57 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import { useEffect } from 'react';
-
-const features = [
-  {
-    icon: Mic,
-    title: 'Голосовые заметки',
-    description:
-      'Grover фиксирует день голосом — Whisper расшифровывает, AI структурирует, вы подтверждаете перед сохранением.',
-  },
-  {
-    icon: Brain,
-    title: 'AI с памятью цикла',
-    description:
-      'Советник учитывает весь журнал: события, daily summaries, датчики, фото и прошлые диалоги — не только последний вопрос.',
-  },
-  {
-    icon: Thermometer,
-    title: 'Датчики и среда',
-    description: 'Ручной ввод или API ingest. Агрегаты min/max/avg попадают в контекст рекомендаций.',
-  },
-  {
-    icon: Camera,
-    title: 'Фото-анализ',
-    description:
-      'Vision pipeline сравнивает кадры во времени и даёт гипотезы — без диагнозов «из головы» модели.',
-  },
-  {
-    icon: ClipboardCheck,
-    title: 'SOP и регламенты',
-    description: 'Напоминания, просрочки, исполнение — в одной картине с журналом и отчётами.',
-  },
-  {
-    icon: ShieldCheck,
-    title: 'Trust layer',
-    description: 'Факты отделены от гипотез. Слабый контекст → уточнение, а не выдумка.',
-  },
-];
-
-const steps = [
-  {
-    n: '01',
-    title: 'Записывайте',
-    text: 'Голосом, текстом, фото или с датчиков — всё становится событиями в timeline.',
-  },
-  {
-    n: '02',
-    title: 'Накапливайте',
-    text: 'Worker строит daily summaries и индекс — история цикла сжимается для AI.',
-  },
-  {
-    n: '03',
-    title: 'Спрашивайте',
-    text: 'AI-ассистент собирает retrieval по ферме и отвечает с grounding и confidence.',
-  },
-];
+import { useEffect, useMemo } from 'react';
 
 export function LandingPage() {
   const router = useRouter();
   const { userId, authLoading } = useFarmContext();
+  const { t } = useTranslation();
+
+  const features = useMemo(
+    () => [
+      {
+        icon: Mic,
+        title: t('landing.featureVoiceTitle'),
+        description: t('landing.featureVoiceDesc'),
+      },
+      {
+        icon: Brain,
+        title: t('landing.featureAiTitle'),
+        description: t('landing.featureAiDesc'),
+      },
+      {
+        icon: Thermometer,
+        title: t('landing.featureSensorsTitle'),
+        description: t('landing.featureSensorsDesc'),
+      },
+      {
+        icon: Camera,
+        title: t('landing.featurePhotoTitle'),
+        description: t('landing.featurePhotoDesc'),
+      },
+      {
+        icon: ClipboardCheck,
+        title: t('landing.featureSopTitle'),
+        description: t('landing.featureSopDesc'),
+      },
+      {
+        icon: ShieldCheck,
+        title: t('landing.featureTrustTitle'),
+        description: t('landing.featureTrustDesc'),
+      },
+    ],
+    [t]
+  );
+
+  const steps = useMemo(
+    () => [
+      { n: '01', title: t('landing.step1Title'), text: t('landing.step1Text') },
+      { n: '02', title: t('landing.step2Title'), text: t('landing.step2Text') },
+      { n: '03', title: t('landing.step3Title'), text: t('landing.step3Text') },
+    ],
+    [t]
+  );
 
   useEffect(() => {
     if (!authLoading && userId) {
@@ -85,7 +79,7 @@ export function LandingPage() {
   if (authLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center text-muted-foreground">
-        Загрузка…
+        {t('common.loading')}
       </div>
     );
   }
@@ -93,7 +87,7 @@ export function LandingPage() {
   if (userId) {
     return (
       <div className="flex min-h-screen items-center justify-center text-muted-foreground">
-        Переход в журнал…
+        {t('landing.redirectToJournal')}
       </div>
     );
   }
@@ -106,23 +100,24 @@ export function LandingPage() {
             <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
               <Sprout className="h-4 w-4" />
             </span>
-            Growlog AI
+            {t('appName')}
           </Link>
           <nav className="hidden items-center gap-6 text-sm text-muted-foreground sm:flex">
             <a href="#features" className="hover:text-foreground transition-colors">
-              Возможности
+              {t('landing.features')}
             </a>
             <a href="#how" className="hover:text-foreground transition-colors">
-              Как работает
+              {t('landing.howItWorks')}
             </a>
           </nav>
           <div className="flex items-center gap-2">
+            <LanguageSwitcher compact />
             <ThemeToggle />
             <Button variant="ghost" size="sm" asChild>
-              <Link href="/auth/login">Войти</Link>
+              <Link href="/auth/login">{t('landing.signIn')}</Link>
             </Button>
             <Button size="sm" asChild className="hidden sm:inline-flex">
-              <Link href="/auth/login">Начать</Link>
+              <Link href="/auth/login">{t('landing.getStarted')}</Link>
             </Button>
           </div>
         </div>
@@ -137,39 +132,33 @@ export function LandingPage() {
           <div className="relative mx-auto max-w-5xl px-4 py-16 sm:py-24">
             <p className="mb-4 inline-flex items-center gap-2 rounded-full border border-border/80 bg-muted/50 px-3 py-1 text-xs text-muted-foreground">
               <LineChart className="h-3.5 w-3.5" />
-              Event-centric grow journal + retrieval-first AI
+              {t('landing.badge')}
             </p>
             <h1 className="max-w-2xl text-3xl font-bold leading-tight tracking-tight sm:text-4xl md:text-5xl">
-              Журнал выращивания, который помнит{' '}
-              <span className="text-primary">весь цикл</span>
+              {t('landing.heroTitle')}{' '}
+              <span className="text-primary">{t('landing.heroHighlight')}</span>
             </h1>
             <p className="mt-5 max-w-xl text-base text-muted-foreground sm:text-lg leading-relaxed">
-              Growlog AI — PWA для гроверов: ежедневные голосовые заметки, датчики, фото и
-              AI-советник, который опирается на факты из вашей фермы, а не на общие знания модели.
+              {t('landing.heroSubtitle')}
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Button size="lg" asChild>
-                <Link href="/auth/login">Создать журнал</Link>
+                <Link href="/auth/login">{t('landing.createJournal')}</Link>
               </Button>
               <Button size="lg" variant="outline" asChild>
-                <Link href="/auth/login">У меня уже есть аккаунт</Link>
+                <Link href="/auth/login">{t('landing.haveAccount')}</Link>
               </Button>
             </div>
-            <p className="mt-6 text-xs text-muted-foreground">
-              Supabase · OpenAI · Next.js PWA · RLS по ферме
-            </p>
+            <p className="mt-6 text-xs text-muted-foreground">{t('landing.stack')}</p>
           </div>
         </section>
 
         <section id="features" className="mx-auto max-w-5xl px-4 py-16 sm:py-20">
           <div className="mb-10 max-w-2xl">
             <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-              Всё, что нужно Grover&apos;у каждый день
+              {t('landing.featuresHeading')}
             </h2>
-            <p className="mt-3 text-muted-foreground">
-              Capture → timeline → derived summaries → AI с guardrails. Один источник правды —
-              база событий, не чат.
-            </p>
+            <p className="mt-3 text-muted-foreground">{t('landing.featuresSub')}</p>
           </div>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {features.map((f) => (
@@ -192,7 +181,9 @@ export function LandingPage() {
 
         <section id="how" className="border-y border-border/60 bg-muted/30">
           <div className="mx-auto max-w-5xl px-4 py-16 sm:py-20">
-            <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">Как это работает</h2>
+            <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+              {t('landing.howHeading')}
+            </h2>
             <ol className="mt-10 grid gap-8 sm:grid-cols-3">
               {steps.map((s) => (
                 <li key={s.n} className="relative">
@@ -206,22 +197,22 @@ export function LandingPage() {
         </section>
 
         <section className="mx-auto max-w-5xl px-4 py-16 sm:py-20 text-center">
-          <h2 className="text-2xl font-semibold sm:text-3xl">Готовы вести журнал по-взрослому?</h2>
-          <p className="mx-auto mt-3 max-w-md text-muted-foreground">
-            Регистрация за минуту. Онбординг создаст ферму и первый grow cycle.
-          </p>
+          <h2 className="text-2xl font-semibold sm:text-3xl">{t('landing.ctaHeading')}</h2>
+          <p className="mx-auto mt-3 max-w-md text-muted-foreground">{t('landing.ctaSub')}</p>
           <Button size="lg" className="mt-8" asChild>
-            <Link href="/auth/login">Начать бесплатно</Link>
+            <Link href="/auth/login">{t('landing.ctaButton')}</Link>
           </Button>
         </section>
       </main>
 
       <footer className="border-t border-border/60 py-8">
         <div className="mx-auto flex max-w-5xl flex-col items-center justify-between gap-4 px-4 text-sm text-muted-foreground sm:flex-row">
-          <p>© {new Date().getFullYear()} Growlog AI</p>
+          <p>
+            © {new Date().getFullYear()} {t('appName')}
+          </p>
           <div className="flex gap-4">
             <Link href="/auth/login" className="hover:text-foreground transition-colors">
-              Вход
+              {t('landing.footerSignIn')}
             </Link>
           </div>
         </div>

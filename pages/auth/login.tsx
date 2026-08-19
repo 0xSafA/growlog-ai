@@ -4,7 +4,9 @@ import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import Head from 'next/head';
+import { PageHead } from '@/components/layout/PageHead';
+import { LanguageSwitcher } from '@/components/layout/LanguageSwitcher';
+import { useTranslation } from '@/components/providers/I18nProvider';
 import Link from 'next/link';
 import { useFarmContext } from '@/components/providers/FarmProvider';
 import { useRouter } from 'next/router';
@@ -13,6 +15,7 @@ import { useEffect, useState } from 'react';
 export default function LoginPage() {
   const supabase = createClient();
   const router = useRouter();
+  const { t } = useTranslation();
   const { userId, authLoading } = useFarmContext();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -39,7 +42,7 @@ export default function LoginPage() {
       }
       await router.replace('/dashboard');
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Ошибка входа');
+      setError(err instanceof Error ? err.message : t('auth.signInError'));
     } finally {
       setPending(false);
     }
@@ -47,21 +50,22 @@ export default function LoginPage() {
 
   return (
     <>
-      <Head>
-        <title>Вход — Growlog AI</title>
-      </Head>
+      <PageHead titleKey="titles.login" />
       <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4">
+        <div className="absolute right-4 top-4">
+          <LanguageSwitcher />
+        </div>
         <Card className="w-full max-w-md">
           <CardHeader>
-            <CardTitle>Growlog AI</CardTitle>
+            <CardTitle>{t('appName')}</CardTitle>
             <CardDescription>
-              {mode === 'signin' ? 'Вход в журнал' : 'Регистрация (Supabase Auth)'}
+              {mode === 'signin' ? t('auth.signInTitle') : t('auth.signUpTitle')}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <label className="text-sm font-medium">Email</label>
+                <label className="text-sm font-medium">{t('common.email')}</label>
                 <Input
                   type="email"
                   autoComplete="email"
@@ -71,7 +75,7 @@ export default function LoginPage() {
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium">Пароль</label>
+                <label className="text-sm font-medium">{t('common.password')}</label>
                 <Input
                   type="password"
                   autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
@@ -83,7 +87,11 @@ export default function LoginPage() {
               </div>
               {error && <p className="text-sm text-destructive">{error}</p>}
               <Button type="submit" className="w-full" disabled={pending}>
-                {pending ? '…' : mode === 'signin' ? 'Войти' : 'Зарегистрироваться'}
+                {pending
+                  ? t('auth.signInPending')
+                  : mode === 'signin'
+                    ? t('auth.signIn')
+                    : t('auth.signUp')}
               </Button>
             </form>
             <button
@@ -91,14 +99,14 @@ export default function LoginPage() {
               className="mt-4 w-full text-center text-sm text-muted-foreground underline"
               onClick={() => setMode(mode === 'signin' ? 'signup' : 'signin')}
             >
-              {mode === 'signin' ? 'Нет аккаунта? Создать' : 'Уже есть аккаунт? Войти'}
+              {mode === 'signin' ? t('auth.noAccount') : t('auth.hasAccount')}
             </button>
             <p className="mt-6 text-center text-xs text-muted-foreground">
-              Нужны переменные{' '}
-              <code className="rounded bg-muted px-1">NEXT_PUBLIC_SUPABASE_URL</code> и{' '}
+              {t('auth.envHint')}{' '}
+              <code className="rounded bg-muted px-1">NEXT_PUBLIC_SUPABASE_URL</code> {t('auth.envAnd')}{' '}
               <code className="rounded bg-muted px-1">NEXT_PUBLIC_SUPABASE_ANON_KEY</code>.{' '}
               <Link href="/" className="underline">
-                На главную
+                {t('auth.backHome')}
               </Link>
             </p>
           </CardContent>

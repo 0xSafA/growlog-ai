@@ -1,6 +1,7 @@
 'use client';
 
 import { useFarmContext } from '@/components/providers/FarmProvider';
+import { useTranslation } from '@/components/providers/I18nProvider';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -54,6 +55,7 @@ type ChatTurn = {
 
 export function AdvisorChat() {
   const { supabase, farmId, cycle, primaryScope, loading } = useFarmContext();
+  const { t } = useTranslation();
   const [text, setText] = useState('');
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -108,7 +110,7 @@ export function AdvisorChat() {
       const { data: sessionData } = await supabase.auth.getSession();
       const token = sessionData.session?.access_token;
       if (!token) {
-        setError('Нет сессии');
+        setError(t('advisor.noSession'));
         return;
       }
       if (!conversationRef.current) {
@@ -130,7 +132,7 @@ export function AdvisorChat() {
       });
       const data = (await res.json()) as AskResponse & { error?: string; detail?: string };
       if (!res.ok) {
-        setError(data.detail || data.error || `Ошибка ${res.status}`);
+        setError(data.detail || data.error || t('advisor.errorStatus', { status: res.status }));
         return;
       }
       setTurns((prev) => [
@@ -143,7 +145,7 @@ export function AdvisorChat() {
         },
       ]);
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Сеть');
+      setError(e instanceof Error ? e.message : t('common.network'));
     } finally {
       setPending(false);
     }
@@ -158,11 +160,11 @@ export function AdvisorChat() {
   }
 
   if (loading) {
-    return <p className="text-muted-foreground text-sm">Загрузка…</p>;
+    return <p className="text-muted-foreground text-sm">{t('advisor.loading')}</p>;
   }
 
   if (!farmId) {
-    return <p className="text-muted-foreground text-sm">Выберите ферму в шапке.</p>;
+    return <p className="text-muted-foreground text-sm">{t('common.selectFarm')}</p>;
   }
 
   const lastAssistant = [...turns].reverse().find((t) => t.role === 'assistant' && t.response);
@@ -170,17 +172,15 @@ export function AdvisorChat() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border/60 bg-muted/30 px-3 py-2 text-sm">
-        <span className="text-muted-foreground">
-          Диалог с памятью — учитывается история цикла и предыдущие сообщения.
-        </span>
+        <span className="text-muted-foreground">{t('advisor.banner')}</span>
         <div className="flex gap-2">
           <Button variant="ghost" size="sm" className="h-8 shrink-0" type="button" onClick={newConversation}>
-            Новый диалог
+            {t('advisor.newChat')}
           </Button>
           <Button variant="ghost" size="sm" className="h-8 shrink-0" asChild>
             <Link href="/timeline">
               <ListTree className="mr-1.5 h-4 w-4" />
-              Таймлайн
+              {t('nav.timeline')}
             </Link>
           </Button>
         </div>
@@ -188,29 +188,29 @@ export function AdvisorChat() {
 
       {!cycle && (
         <p className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-900 dark:text-amber-100">
-          Нет активного цикла — контекст ограничен. Создайте цикл в онбординге.
+          {t('advisor.noCycle')}
         </p>
       )}
 
       {turns.length > 0 && (
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-base">История</CardTitle>
+            <CardTitle className="text-base">{t('advisor.history')}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 max-h-[420px] overflow-y-auto text-sm">
-            {turns.map((t) => (
+            {turns.map((turn) => (
               <div
-                key={t.id}
+                key={turn.id}
                 className={
-                  t.role === 'user'
+                  turn.role === 'user'
                     ? 'ml-4 rounded-lg bg-primary/10 px-3 py-2'
                     : 'mr-4 rounded-lg border border-border/60 px-3 py-2'
                 }
               >
                 <p className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1">
-                  {t.role === 'user' ? 'Вы' : 'Ассистент'}
+                  {turn.role === 'user' ? t('advisor.you') : t('advisor.assistant')}
                 </p>
-                <p className="whitespace-pre-wrap">{t.text}</p>
+                <p className="whitespace-pre-wrap">{turn.text}</p>
               </div>
             ))}
             <div ref={bottomRef} />
@@ -220,15 +220,13 @@ export function AdvisorChat() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Вопрос ассистенту</CardTitle>
-          <CardDescription>
-            Retrieval по журналу, daily summaries, сенсорам, фото и SOP за весь цикл.
-          </CardDescription>
+          <CardTitle>{t('advisor.askTitle')}</CardTitle>
+          <CardDescription>{t('advisor.askDesc')}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
           <textarea
             className="min-h-[100px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            placeholder="Например: что изменилось с начала цикла по влажности и заметкам?"
+            placeholder={t('advisor.placeholder')}
             value={text}
             onChange={(e) => setText(e.target.value)}
             disabled={pending}
@@ -240,12 +238,12 @@ export function AdvisorChat() {
             {pending ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Думаю…
+                {t('advisor.thinking')}
               </>
             ) : (
               <>
                 <Send className="mr-2 h-4 w-4" />
-                Спросить
+                {t('advisor.ask')}
               </>
             )}
           </Button>
@@ -266,11 +264,13 @@ export function AdvisorChat() {
 }
 
 function AssistantDetail({ response: last }: { response: AskResponse }) {
+  const { t } = useTranslation();
+
   return (
     <Card>
       <CardHeader>
         <CardTitle className="text-base">
-          {last.title ?? 'Детали ответа'}{' '}
+          {last.title ?? t('advisor.responseDetails')}{' '}
           <span className="text-muted-foreground font-normal text-sm">
             ({last.insight_type}) · {last.model}
           </span>
@@ -278,14 +278,14 @@ function AssistantDetail({ response: last }: { response: AskResponse }) {
       </CardHeader>
       <CardContent className="space-y-4 text-sm">
         <div className="flex flex-wrap gap-2 items-center text-xs">
-          <span className="text-muted-foreground">Уверенность:</span>
+          <span className="text-muted-foreground">{t('dailyFocus.confidence')}</span>
           <span className="rounded-full bg-muted px-2 py-0.5">
             {last.confidence.label} ({Math.round(last.confidence.score * 100)}%)
           </span>
         </div>
         {last.facts.length > 0 && (
           <div>
-            <p className="font-medium text-xs uppercase tracking-wide text-muted-foreground mb-1">Факты</p>
+            <p className="font-medium text-xs uppercase tracking-wide text-muted-foreground mb-1">{t('advisor.facts')}</p>
             <ul className="list-disc pl-5 space-y-1">
               {last.facts.map((f, i) => (
                 <li key={i}>{f}</li>
@@ -296,7 +296,7 @@ function AssistantDetail({ response: last }: { response: AskResponse }) {
         {last.recommendation && (
           <div>
             <p className="font-medium text-xs uppercase tracking-wide text-muted-foreground mb-1">
-              Рекомендация
+              {t('advisor.recommendation')}
             </p>
             <p className="whitespace-pre-wrap">{last.recommendation}</p>
           </div>
@@ -304,7 +304,7 @@ function AssistantDetail({ response: last }: { response: AskResponse }) {
         {last.missing_data.length > 0 && (
           <div>
             <p className="font-medium text-xs uppercase tracking-wide text-muted-foreground mb-1">
-              Не хватает данных
+              {t('advisor.missingData')}
             </p>
             <ul className="list-disc pl-5 space-y-1">
               {last.missing_data.map((m, i) => (

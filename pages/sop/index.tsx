@@ -2,17 +2,19 @@
 
 import { AppRouteReady } from '@/components/AppRouteReady';
 import { AppShell } from '@/components/layout/AppShell';
+import { PageHead } from '@/components/layout/PageHead';
 import { useFarmContext } from '@/components/providers/FarmProvider';
+import { useTranslation } from '@/components/providers/I18nProvider';
 import { fetchOpenSopRuns, fetchSopDefinitions, SOP_RUNS_QUERY_KEY } from '@/lib/growlog/sop-queries';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { formatInTimeZone } from 'date-fns-tz';
 import { useQuery } from '@tanstack/react-query';
-import Head from 'next/head';
 import Link from 'next/link';
 import { Plus } from 'lucide-react';
 
 function SopIndexInner() {
+  const { t } = useTranslation();
   const { supabase, farmId, cycle, farms } = useFarmContext();
   const farm = farms.find((f) => f.id === farmId);
 
@@ -33,7 +35,7 @@ function SopIndexInner() {
       );
       const { data: sessionData } = await supabase.auth.getSession();
       const token = sessionData.session?.access_token;
-      if (!token) throw new Error('Нет сессии');
+      if (!token) throw new Error(t('advisor.noSession'));
       const m = await fetch('/api/sop/materialize', {
         method: 'POST',
         headers: {
@@ -55,39 +57,37 @@ function SopIndexInner() {
   });
 
   if (!cycle) {
-    return <p className="text-muted-foreground">Нужен активный цикл.</p>;
+    return <p className="text-muted-foreground">{t('common.needActiveCycle')}</p>;
   }
 
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-sm text-muted-foreground">
-          Фаза 3 ADR-001: регламенты, ежедневные run, исполнение.
-        </p>
+        <p className="text-sm text-muted-foreground">{t('sop.intro')}</p>
         <Button asChild size="sm">
           <Link href="/sop/new">
             <Plus className="mr-2 h-4 w-4" />
-            Новый SOP
+            {t('sop.newSop')}
           </Link>
         </Button>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Активные задачи (run)</CardTitle>
-          <CardDescription>Открытые и просроченные по текущему циклу.</CardDescription>
+          <CardTitle className="text-base">{t('sop.activeRunsTitle')}</CardTitle>
+          <CardDescription>{t('sop.activeRunsDesc')}</CardDescription>
         </CardHeader>
         <CardContent>
-          {runsQuery.isLoading && <p className="text-sm text-muted-foreground">Загрузка…</p>}
+          {runsQuery.isLoading && (
+            <p className="text-sm text-muted-foreground">{t('common.loading')}</p>
+          )}
           {runsQuery.error && (
             <p className="text-sm text-destructive">
               {(runsQuery.error as Error).message}
             </p>
           )}
           {runsQuery.data && runsQuery.data.length === 0 && (
-            <p className="text-sm text-muted-foreground">
-              Нет открытых SOP. Создайте регламент с ежедневным триггером или обновите страницу завтра.
-            </p>
+            <p className="text-sm text-muted-foreground">{t('sop.noOpenRunsHint')}</p>
           )}
           <ul className="space-y-2">
             {runsQuery.data?.map((r) => {
@@ -95,6 +95,14 @@ function SopIndexInner() {
                 r.sop_definitions && typeof r.sop_definitions === 'object' && 'title' in r.sop_definitions
                   ? (r.sop_definitions as { title: string }).title
                   : 'SOP';
+              const dueLabel = r.due_at
+                ? t('sop.dueBy', {
+                    date: new Date(r.due_at).toLocaleString(undefined, {
+                      dateStyle: 'short',
+                      timeStyle: 'short',
+                    }),
+                  })
+                : null;
               return (
                 <li
                   key={r.id}
@@ -104,12 +112,11 @@ function SopIndexInner() {
                     <p className="font-medium">{title}</p>
                     <p className="text-xs text-muted-foreground">
                       {r.status}
-                      {r.due_at &&
-                        ` · до ${new Date(r.due_at).toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' })}`}
+                      {dueLabel && ` · ${dueLabel}`}
                     </p>
                   </div>
                   <Button asChild size="sm" variant="secondary">
-                    <Link href={`/sop/run/${r.id}`}>Исполнить</Link>
+                    <Link href={`/sop/run/${r.id}`}>{t('dailyFocus.execute')}</Link>
                   </Button>
                 </li>
               );
@@ -120,11 +127,13 @@ function SopIndexInner() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Регламенты</CardTitle>
-          <CardDescription>Активные определения SOP на ферме.</CardDescription>
+          <CardTitle className="text-base">{t('sop.definitionsTitle')}</CardTitle>
+          <CardDescription>{t('sop.definitionsDesc')}</CardDescription>
         </CardHeader>
         <CardContent>
-          {defsQuery.isLoading && <p className="text-sm text-muted-foreground">Загрузка…</p>}
+          {defsQuery.isLoading && (
+            <p className="text-sm text-muted-foreground">{t('common.loading')}</p>
+          )}
           <ul className="space-y-2">
             {defsQuery.data?.map((d) => (
               <li key={d.id} className="text-sm">
@@ -136,7 +145,7 @@ function SopIndexInner() {
             ))}
           </ul>
           {defsQuery.data?.length === 0 && (
-            <p className="text-sm text-muted-foreground">Пока нет SOP — создайте первый.</p>
+            <p className="text-sm text-muted-foreground">{t('sop.noDefinitionsHint')}</p>
           )}
         </CardContent>
       </Card>
@@ -144,17 +153,22 @@ function SopIndexInner() {
   );
 }
 
-export default function SopIndexPage() {
+function SopPageBody() {
+  const { t } = useTranslation();
   return (
     <>
-      <Head>
-        <title>SOP — Growlog AI</title>
-      </Head>
-      <AppRouteReady>
-        <AppShell title="SOP">
-          <SopIndexInner />
-        </AppShell>
-      </AppRouteReady>
+      <PageHead titleKey="titles.sop" />
+      <AppShell title={t('titles.sop')}>
+        <SopIndexInner />
+      </AppShell>
     </>
+  );
+}
+
+export default function SopIndexPage() {
+  return (
+    <AppRouteReady>
+      <SopPageBody />
+    </AppRouteReady>
   );
 }

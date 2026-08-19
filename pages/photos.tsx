@@ -2,7 +2,9 @@
 
 import { AppRouteReady } from '@/components/AppRouteReady';
 import { AppShell } from '@/components/layout/AppShell';
+import { PageHead } from '@/components/layout/PageHead';
 import { useFarmContext } from '@/components/providers/FarmProvider';
+import { useTranslation } from '@/components/providers/I18nProvider';
 import {
   formatPhotoSizeLimit,
   getMaxPhotoBytesVisionClient,
@@ -10,10 +12,10 @@ import {
 import { createPhotoCaptureEvent } from '@/lib/growlog/mutations';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import Head from 'next/head';
 import { useRef, useState } from 'react';
 
 function PhotoForm() {
+  const { t } = useTranslation();
   const { supabase, farmId, cycle, primaryScope, refetchAll, userId } = useFarmContext();
   const [caption, setCaption] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -28,7 +30,10 @@ function PhotoForm() {
     setError(null);
     if (file.size > maxBytes) {
       setError(
-        `Файл слишком большой (${formatPhotoSizeLimit(file.size)}). Для vision-анализа максимум ${formatPhotoSizeLimit(maxBytes)} — сожмите или уменьшите изображение.`
+        t('photos.fileTooLarge', {
+          size: formatPhotoSizeLimit(file.size),
+          max: formatPhotoSizeLimit(maxBytes),
+        })
       );
       e.target.value = '';
       return;
@@ -47,55 +52,57 @@ function PhotoForm() {
       if (inputRef.current) inputRef.current.value = '';
       await refetchAll();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Ошибка загрузки');
+      setError(err instanceof Error ? err.message : t('common.uploadError'));
     } finally {
       setPending(false);
     }
   }
 
   if (!cycle || !primaryScope) {
-    return <p className="text-muted-foreground">Нужен активный цикл.</p>;
+    return <p className="text-muted-foreground">{t('common.needActiveCycle')}</p>;
   }
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Фото в журнал</CardTitle>
-        <CardDescription>
-          Файл уходит в Storage bucket `media`, создаётся `media_assets` и событие `photo_capture`
-          (ADR-001).
-        </CardDescription>
+        <CardTitle>{t('photos.title')}</CardTitle>
+        <CardDescription>{t('photos.desc')}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="space-y-2">
-          <label className="text-sm font-medium">Подпись (опционально)</label>
+          <label className="text-sm font-medium">{t('photos.caption')}</label>
           <Input value={caption} onChange={(e) => setCaption(e.target.value)} />
         </div>
         <div className="space-y-2">
-          <label className="text-sm font-medium">Файл</label>
+          <label className="text-sm font-medium">{t('photos.file')}</label>
           <Input ref={inputRef} type="file" accept="image/*" onChange={onPick} disabled={pending} />
           <p className="text-xs text-muted-foreground">
-            До {formatPhotoSizeLimit(maxBytes)} — иначе сервер отклонит файл при vision-анализе (ADR-010).
+            {t('photos.sizeHint', { max: formatPhotoSizeLimit(maxBytes) })}
           </p>
         </div>
         {error && <p className="text-sm text-destructive">{error}</p>}
-        {pending && <p className="text-sm text-muted-foreground">Загрузка…</p>}
+        {pending && <p className="text-sm text-muted-foreground">{t('photos.uploading')}</p>}
       </CardContent>
     </Card>
   );
 }
 
-export default function PhotosPage() {
+function PhotosPageBody() {
+  const { t } = useTranslation();
   return (
     <>
-      <Head>
-        <title>Фото — Growlog AI</title>
-      </Head>
-      <AppRouteReady>
-        <AppShell title="Фото">
-          <PhotoForm />
-        </AppShell>
-      </AppRouteReady>
+      <PageHead titleKey="titles.photos" />
+      <AppShell title={t('titles.photos')}>
+        <PhotoForm />
+      </AppShell>
     </>
+  );
+}
+
+export default function PhotosPage() {
+  return (
+    <AppRouteReady>
+      <PhotosPageBody />
+    </AppRouteReady>
   );
 }

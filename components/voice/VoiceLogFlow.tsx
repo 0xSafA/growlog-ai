@@ -1,6 +1,7 @@
 'use client';
 
 import { useFarmContext } from '@/components/providers/FarmProvider';
+import { useTranslation } from '@/components/providers/I18nProvider';
 import { createLogEntry } from '@/lib/growlog/mutations';
 import { VOICE_EXTRACTABLE_EVENT_TYPES } from '@/lib/voice/extractable-event-types';
 import type { VoiceExtractionResult } from '@/lib/voice/extraction-schema';
@@ -17,6 +18,7 @@ type Step = 'idle' | 'recording' | 'processing' | 'review';
 const MAX_MS = 120_000;
 
 export function VoiceLogFlow() {
+  const { t } = useTranslation();
   const { supabase, farmId, cycle, primaryScope, refetchAll, userId } = useFarmContext();
   const [step, setStep] = useState<Step>('idle');
   const [error, setError] = useState<string | null>(null);
@@ -35,7 +37,7 @@ export function VoiceLogFlow() {
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const stopTracks = useCallback(() => {
-    streamRef.current?.getTracks().forEach((t) => t.stop());
+    streamRef.current?.getTracks().forEach((track) => track.stop());
     streamRef.current = null;
   }, []);
 
@@ -64,7 +66,7 @@ export function VoiceLogFlow() {
           data: { session },
         } = await supabase.auth.getSession();
         const token = session?.access_token;
-        if (!token) throw new Error('Нет сессии');
+        if (!token) throw new Error(t('voice.noSession'));
 
         const trRes = await fetch('/api/voice/transcribe', {
           method: 'POST',
@@ -79,12 +81,12 @@ export function VoiceLogFlow() {
         });
         const trJson = (await trRes.json()) as { text?: string; error?: string; detail?: string };
         if (!trRes.ok) {
-          throw new Error(trJson.error ?? trJson.detail ?? 'Транскрибация не удалась');
+          throw new Error(trJson.error ?? trJson.detail ?? t('voice.transcribeFailed'));
         }
         const text = trJson.text?.trim() ?? '';
         setTranscript(text);
         if (!text) {
-          throw new Error('Пустая расшифровка — повторите запись');
+          throw new Error(t('voice.emptyTranscript'));
         }
 
         const exRes = await fetch('/api/voice/extract', {
@@ -101,7 +103,7 @@ export function VoiceLogFlow() {
           model?: string;
         };
         if (!exRes.ok) {
-          throw new Error(exJson.detail ?? exJson.error ?? 'Разбор события не удался');
+          throw new Error(exJson.detail ?? exJson.error ?? t('voice.parseFailed'));
         }
 
         setExtracted({
@@ -126,11 +128,11 @@ export function VoiceLogFlow() {
         }
         setStep('review');
       } catch (e: unknown) {
-        setError(e instanceof Error ? e.message : 'Ошибка');
+        setError(e instanceof Error ? e.message : t('common.error'));
         setStep('idle');
       }
     },
-    [supabase]
+    [supabase, t]
   );
 
   const startRecording = useCallback(async () => {
@@ -140,7 +142,7 @@ export function VoiceLogFlow() {
     chunksRef.current = [];
 
     if (!navigator.mediaDevices?.getUserMedia) {
-      setError('Браузер не поддерживает запись с микрофона');
+      setError(t('voice.micUnsupported'));
       return;
     }
 
@@ -161,7 +163,7 @@ export function VoiceLogFlow() {
       mr.onstop = () => {
         const blob = new Blob(chunksRef.current, { type: mr.mimeType });
         chunksRef.current = [];
-        streamRef.current?.getTracks().forEach((t) => t.stop());
+        streamRef.current?.getTracks().forEach((track) => track.stop());
         streamRef.current = null;
         mediaRecorderRef.current = null;
         void runPipeline(blob);
@@ -174,9 +176,9 @@ export function VoiceLogFlow() {
         stopRecording();
       }, MAX_MS);
     } catch {
-      setError('Не удалось получить доступ к микрофону');
+      setError(t('voice.micDenied'));
     }
-  }, [runPipeline, stopRecording]);
+  }, [runPipeline, stopRecording, t]);
 
   async function confirmSave(e: React.FormEvent) {
     e.preventDefault();
@@ -209,33 +211,31 @@ export function VoiceLogFlow() {
       setTitle('');
       await refetchAll();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Сохранение не удалось');
+      setError(err instanceof Error ? err.message : t('voice.saveFailed'));
     } finally {
       setSavePending(false);
     }
   }
 
   if (!cycle || !primaryScope) {
-    return <p className="text-muted-foreground">Сначала завершите онбординг с циклом.</p>;
+    return <p className="text-muted-foreground">{t('common.finishOnboarding')}</p>;
   }
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Голосовая запись</CardTitle>
-        <CardDescription>
-          Этап 2 ADR-001: Whisper → структура → вы правите → сохранение в журнал (без автозаписи фактов).
-        </CardDescription>
+        <CardTitle>{t('voice.title')}</CardTitle>
+        <CardDescription>{t('voice.desc')}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         {step === 'idle' && (
           <div className="flex flex-col items-center gap-4 py-4">
             <Button type="button" size="lg" className="gap-2" onClick={() => void startRecording()}>
               <Mic className="h-5 w-5" />
-              Начать запись
+              {t('voice.start')}
             </Button>
             <p className="text-center text-xs text-muted-foreground">
-              До {MAX_MS / 1000} с, формат WebM. Нужен OPENAI_API_KEY на сервере.
+              {t('voice.hint', { seconds: MAX_MS / 1000 })}
             </p>
           </div>
         )}
@@ -245,44 +245,42 @@ export function VoiceLogFlow() {
             <div className="flex h-16 w-16 items-center justify-center rounded-full bg-destructive/20 animate-pulse">
               <Mic className="h-8 w-8 text-destructive" />
             </div>
-            <p className="text-sm font-medium">Идёт запись…</p>
+            <p className="text-sm font-medium">{t('voice.recording')}</p>
             <Button type="button" variant="secondary" className="gap-2" onClick={stopRecording}>
               <Square className="h-4 w-4" />
-              Стоп и разобрать
+              {t('voice.stopAndParse')}
             </Button>
           </div>
         )}
 
         {step === 'processing' && (
-          <p className="py-8 text-center text-muted-foreground">
-            Транскрибация и разбор события…
-          </p>
+          <p className="py-8 text-center text-muted-foreground">{t('voice.processing')}</p>
         )}
 
         {step === 'review' && extracted && (
           <form onSubmit={confirmSave} className="space-y-4">
             <div className="rounded-md border border-border/80 bg-muted/30 p-3 text-sm">
-              <p className="text-xs font-medium text-muted-foreground">Расшифровка</p>
+              <p className="text-xs font-medium text-muted-foreground">{t('voice.transcript')}</p>
               <p className="mt-1 whitespace-pre-wrap">{transcript}</p>
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium">Тип события (проверьте)</label>
+              <label className="text-sm font-medium">{t('voice.eventTypeReview')}</label>
               <select
                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                 value={eventType}
                 onChange={(e) => setEventType(e.target.value as EventType)}
               >
-                {VOICE_EXTRACTABLE_EVENT_TYPES.map((t) => (
-                  <option key={t} value={t}>
-                    {t.replace(/_/g, ' ')}
+                {VOICE_EXTRACTABLE_EVENT_TYPES.map((type) => (
+                  <option key={type} value={type}>
+                    {type.replace(/_/g, ' ')}
                   </option>
                 ))}
               </select>
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium">Текст в журнал</label>
+              <label className="text-sm font-medium">{t('voice.journalText')}</label>
               <textarea
                 className="flex min-h-[120px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                 value={body}
@@ -292,12 +290,12 @@ export function VoiceLogFlow() {
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium">Заголовок (опционально)</label>
+              <label className="text-sm font-medium">{t('voice.titleOptional')}</label>
               <Input value={title} onChange={(e) => setTitle(e.target.value)} />
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium">Когда (локальное время)</label>
+              <label className="text-sm font-medium">{t('common.whenLocal')}</label>
               <Input
                 type="datetime-local"
                 value={occurredAt}
@@ -308,7 +306,7 @@ export function VoiceLogFlow() {
 
             <div className="flex flex-wrap gap-2">
               <Button type="submit" disabled={savePending}>
-                {savePending ? 'Сохранение…' : 'Подтвердить и записать в журнал'}
+                {savePending ? t('common.saving') : t('voice.confirm')}
               </Button>
               <Button
                 type="button"
@@ -318,7 +316,7 @@ export function VoiceLogFlow() {
                   setExtracted(null);
                 }}
               >
-                Отмена
+                {t('common.cancel')}
               </Button>
             </div>
           </form>

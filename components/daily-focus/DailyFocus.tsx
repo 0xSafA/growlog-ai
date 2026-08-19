@@ -1,6 +1,7 @@
 'use client';
 
 import { useFarmContext } from '@/components/providers/FarmProvider';
+import { useTranslation } from '@/components/providers/I18nProvider';
 import { DAILY_FOCUS_INSIGHT_TYPES } from '@/lib/growlog/daily-focus-insights';
 import { fetchOpenSopRuns, SOP_RUNS_QUERY_KEY } from '@/lib/growlog/sop-queries';
 import { Button } from '@/components/ui/button';
@@ -49,6 +50,7 @@ export function DailyFocus() {
     recentEvents,
     loading,
   } = useFarmContext();
+  const { t } = useTranslation();
 
   const farm = farms.find((f) => f.id === farmId);
 
@@ -104,22 +106,19 @@ export function DailyFocus() {
   });
 
   if (loading) {
-    return <p className="text-muted-foreground">Загрузка данных цикла…</p>;
+    return <p className="text-muted-foreground">{t('dailyFocus.loading')}</p>;
   }
 
   if (!cycle || !primaryScope) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Нет активного цикла</CardTitle>
-          <CardDescription>
-            Создайте цикл выращивания в настройках или через поддержку — для журнала нужен цикл и
-            область (scope).
-          </CardDescription>
+          <CardTitle>{t('dailyFocus.noCycleTitle')}</CardTitle>
+          <CardDescription>{t('dailyFocus.noCycleDesc')}</CardDescription>
         </CardHeader>
         <CardContent>
           <Button asChild variant="outline">
-            <Link href="/onboarding">Настроить ферму</Link>
+            <Link href="/onboarding">{t('dailyFocus.setupFarm')}</Link>
           </Button>
         </CardContent>
       </Card>
@@ -169,21 +168,21 @@ export function DailyFocus() {
       {/* ADR-005: Key snapshot — minimal, prioritization */}
       <Card className="border-primary/15 bg-gradient-to-br from-primary/[0.06] to-transparent">
         <CardHeader className="pb-2">
-          <CardDescription>Снимок цикла</CardDescription>
+          <CardDescription>{t('dailyFocus.snapshot')}</CardDescription>
           <CardTitle className="text-xl leading-tight">{cycle.name}</CardTitle>
           <p className="text-sm text-muted-foreground">
-            День {dayNumber} · {cycle.stage}
+            {t('common.day')} {dayNumber} · {cycle.stage}
             {cycle.cultivar_name ? ` · ${cycle.cultivar_name}` : ''}
           </p>
         </CardHeader>
         <CardContent className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
           <span>
-            Сегодня в журнале:{' '}
+            {t('dailyFocus.todayInJournal')}{' '}
             <strong className="text-foreground tabular-nums">{todayEvents.length}</strong>
           </span>
           <span className="hidden sm:inline">·</span>
           <Link href="/timeline" className="text-primary underline-offset-2 hover:underline">
-            Что было → таймлайн
+            {t('dailyFocus.whatHappened')}
           </Link>
         </CardContent>
       </Card>
@@ -191,24 +190,19 @@ export function DailyFocus() {
       {/* ADR-005: Alerts / risks first */}
       <section aria-labelledby="df-risks-heading">
         <h2 id="df-risks-heading" className="sr-only">
-          Риски и отклонения
+          {t('dailyFocus.risksHeading')}
         </h2>
         <Card className="border-amber-500/20">
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-base">
               <AlertTriangle className="h-4 w-4 text-amber-600" />
-              Риски и сигналы
+              {t('dailyFocus.risksTitle')}
             </CardTitle>
-            <CardDescription>
-              События типа проблема / вредитель / дефицит / аномалия из недавней истории.
-            </CardDescription>
+            <CardDescription>{t('dailyFocus.risksDesc')}</CardDescription>
           </CardHeader>
           <CardContent>
             {riskEvents.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                Критичных сигналов в последних записях нет. При появлении проблемы зафиксируйте её
-                записью — это основа для ассистента и отчётов.
-              </p>
+              <p className="text-sm text-muted-foreground">{t('dailyFocus.noRisks')}</p>
             ) : (
               <ul className="space-y-2">
                 {riskEvents.slice(0, 5).map((e) => (
@@ -239,31 +233,31 @@ export function DailyFocus() {
       {/* ADR-005: Today SOP */}
       <section aria-labelledby="df-sop-heading">
         <h2 id="df-sop-heading" className="sr-only">
-          SOP на сегодня
+          {t('dailyFocus.sopTodayHeading')}
         </h2>
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-base">
               <ClipboardCheck className="h-4 w-4 text-primary" />
-              SOP сегодня
+              {t('dailyFocus.sopTodayTitle')}
             </CardTitle>
-            <CardDescription>Открытые регламенты — главный сценарий работы гровера.</CardDescription>
+            <CardDescription>{t('dailyFocus.sopTodayDesc')}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-2">
             {sopRunsQuery.isLoading && (
-              <p className="text-sm text-muted-foreground">Загрузка задач…</p>
+              <p className="text-sm text-muted-foreground">{t('dailyFocus.loadingTasks')}</p>
             )}
             {sopRunsQuery.data && sopRunsQuery.data.length === 0 && (
               <p className="text-sm text-muted-foreground">
-                Нет открытых регламентов.{' '}
+                {t('dailyFocus.noSop')}{' '}
                 <Link href="/sop/new" className="text-primary underline">
-                  Создать SOP
+                  {t('dailyFocus.createSop')}
                 </Link>
               </p>
             )}
             <ul className="space-y-2">
               {sopRunsQuery.data?.slice(0, 4).map((r) => {
-                const t =
+                const sopTitle =
                   r.sop_definitions &&
                   typeof r.sop_definitions === 'object' &&
                   'title' in r.sop_definitions
@@ -272,13 +266,13 @@ export function DailyFocus() {
                 return (
                   <li key={r.id} className="flex items-center justify-between gap-2 text-sm">
                     <span className="min-w-0 truncate">
-                      {t}
+                      {sopTitle}
                       {r.status === 'overdue' && (
-                        <span className="ml-1 text-amber-600">· просрочено</span>
+                        <span className="ml-1 text-amber-600">{t('dailyFocus.overdue')}</span>
                       )}
                     </span>
                     <Button asChild size="sm" variant="outline" className="shrink-0">
-                      <Link href={`/sop/run/${r.id}`}>Выполнить</Link>
+                      <Link href={`/sop/run/${r.id}`}>{t('dailyFocus.execute')}</Link>
                     </Button>
                   </li>
                 );
@@ -286,7 +280,7 @@ export function DailyFocus() {
             </ul>
             {(sopRunsQuery.data?.length ?? 0) > 4 && (
               <Button asChild variant="link" className="h-auto px-0 text-xs">
-                <Link href="/sop">Все SOP →</Link>
+                <Link href="/sop">{t('dailyFocus.allSop')}</Link>
               </Button>
             )}
           </CardContent>
@@ -296,33 +290,29 @@ export function DailyFocus() {
       {/* ADR-005: AI Focus — trust signals when insight exists */}
       <section aria-labelledby="df-ai-heading">
         <h2 id="df-ai-heading" className="sr-only">
-          Фокус ИИ
+          {t('dailyFocus.aiFocusHeading')}
         </h2>
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-base">
               <Brain className="h-4 w-4 text-primary" />
-              Фокус ИИ
+              {t('dailyFocus.aiFocusTitle')}
             </CardTitle>
-            <CardDescription>
-              Показываем последний сохранённый инсайт (фокус дня, риск, сводка по фактам, паттерн,
-              объяснение причин, блок истории и т.д.). Развёрнуто — в ассистенте.
-            </CardDescription>
+            <CardDescription>{t('dailyFocus.aiFocusDesc')}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             {focusInsightsQuery.isLoading && (
-              <p className="text-sm text-muted-foreground">Загрузка инсайтов…</p>
+              <p className="text-sm text-muted-foreground">{t('dailyFocus.loadingInsights')}</p>
             )}
             {!focusInsightsQuery.isLoading && !topInsight && (
               <div className="rounded-md border border-dashed border-border/80 px-3 py-4 text-center text-sm text-muted-foreground">
                 <Sparkles className="mx-auto mb-2 h-8 w-8 opacity-50" />
-                Пока нет сохранённого фокуса по циклу. Спросите ассистента — ответ можно сохранить
-                как инсайт при наличии данных в журнале.
+                {t('dailyFocus.noInsight')}
                 <div className="mt-3">
                   <Button asChild size="sm" variant="secondary">
                     <Link href="/assistant">
                       <MessageCircle className="mr-2 h-4 w-4" />
-                      Открыть ассистента
+                      {t('dailyFocus.openAssistant')}
                     </Link>
                   </Button>
                 </div>
@@ -331,7 +321,7 @@ export function DailyFocus() {
             {topInsight && (
               <div className="space-y-2 rounded-md border border-border/60 bg-muted/30 px-3 py-3">
                 <p className="font-medium text-sm leading-snug">
-                  {topInsight.title ?? 'Инсайт'}
+                  {topInsight.title ?? t('dailyFocus.insight')}
                   <span className="ml-2 text-xs font-normal text-muted-foreground">
                     ({topInsight.insight_type.replace(/_/g, ' ')})
                   </span>
@@ -340,7 +330,7 @@ export function DailyFocus() {
                   {topInsight.body}
                 </p>
                 <div className="flex flex-wrap items-center gap-2 text-xs">
-                  <span className="text-muted-foreground">Уверенность:</span>
+                  <span className="text-muted-foreground">{t('dailyFocus.confidence')}</span>
                   {topInsight.confidence_label ? (
                     <span className="rounded-full bg-background px-2 py-0.5 capitalize">
                       {topInsight.confidence_label}
@@ -348,11 +338,11 @@ export function DailyFocus() {
                         ` (${Math.round(Number(topInsight.confidence) * 100)}%)`}
                     </span>
                   ) : (
-                    <span className="text-muted-foreground">не указана</span>
+                    <span className="text-muted-foreground">{t('dailyFocus.confidenceUnknown')}</span>
                   )}
                 </div>
                 <Button asChild variant="link" className="h-auto px-0 text-xs">
-                  <Link href="/assistant">Подробнее в ассистенте →</Link>
+                  <Link href="/assistant">{t('dailyFocus.moreInAssistant')}</Link>
                 </Button>
                 <Button
                   type="button"
@@ -363,7 +353,7 @@ export function DailyFocus() {
                   onClick={() => void speakFocus(topInsight.body)}
                 >
                   <Volume2 className="mr-2 h-4 w-4" />
-                  {ttsPending ? 'Готовлю…' : 'Озвучить'}
+                  {ttsPending ? t('dailyFocus.ttsPending') : t('dailyFocus.speak')}
                 </Button>
               </div>
             )}
@@ -374,32 +364,30 @@ export function DailyFocus() {
       {/* ADR-005: Quick actions — secondary; primary capture is global FAB */}
       <section aria-labelledby="df-quick-heading">
         <h2 id="df-quick-heading" className="sr-only">
-          Быстрые действия
+          {t('dailyFocus.quickActionsHeading')}
         </h2>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-base">Быстрые действия</CardTitle>
-            <CardDescription>
-              Основная запись — кнопка «Запись» внизу экрана. Здесь — короткие пути.
-            </CardDescription>
+            <CardTitle className="text-base">{t('dailyFocus.quickActionsTitle')}</CardTitle>
+            <CardDescription>{t('dailyFocus.quickActionsDesc')}</CardDescription>
           </CardHeader>
           <CardContent className="flex flex-wrap gap-2">
             <Button asChild variant="secondary" size="sm">
               <Link href="/log?tab=voice">
                 <Mic className="mr-2 h-4 w-4" />
-                Голос
+                {t('common.voice')}
               </Link>
             </Button>
             <Button asChild variant="outline" size="sm">
-              <Link href="/photos">Фото</Link>
+              <Link href="/photos">{t('nav.photos')}</Link>
             </Button>
             <Button asChild variant="outline" size="sm">
-              <Link href="/sensors">Замер</Link>
+              <Link href="/sensors">{t('dailyFocus.measurement')}</Link>
             </Button>
             <Button asChild variant="outline" size="sm">
               <Link href="/sop">
                 <ClipboardCheck className="mr-2 h-4 w-4" />
-                Все SOP
+                {t('nav.sop')}
               </Link>
             </Button>
           </CardContent>
@@ -411,15 +399,13 @@ export function DailyFocus() {
         <CardHeader className="pb-2">
           <CardTitle className="flex items-center gap-2 text-lg">
             <CalendarClock className="h-5 w-5" />
-            Недавняя история
+            {t('dailyFocus.recentHistory')}
           </CardTitle>
-          <CardDescription>Таймлайн — источник правды; ассистент опирается на эти записи.</CardDescription>
+          <CardDescription>{t('dailyFocus.recentHistoryDesc')}</CardDescription>
         </CardHeader>
         <CardContent>
           {recentEvents.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              История пуста — сделайте первую запись кнопкой «Запись» или добавьте фото.
-            </p>
+            <p className="text-sm text-muted-foreground">{t('dailyFocus.emptyHistory')}</p>
           ) : (
             <ul className="space-y-3">
               {recentEvents.slice(0, 6).map((e) => (
@@ -445,10 +431,10 @@ export function DailyFocus() {
           )}
           <div className="mt-4 flex flex-wrap gap-2">
             <Button asChild variant="link" className="h-auto px-0">
-              <Link href="/timeline">Весь таймлайн →</Link>
+              <Link href="/timeline">{t('dailyFocus.fullTimeline')}</Link>
             </Button>
             <Button asChild variant="link" className="h-auto px-0">
-              <Link href="/assistant">Спросить про историю →</Link>
+              <Link href="/assistant">{t('dailyFocus.askAboutHistory')}</Link>
             </Button>
           </div>
         </CardContent>
