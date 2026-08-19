@@ -16,6 +16,8 @@ const SOP =
   /\b(sop|регламент|протокол|чеклист|процедур)\b/i;
 const DAILY =
   /\b(сегодня|на\s+сегодня|daily\s+focus|фокус\s+дня|просроч)\b/i;
+const FULL_CYCLE =
+  /\b(весь\s+цикл|за\s+весь\s+период|full\s+cycle|whole\s+cycle|с\s+начала|since\s+start)\b/i;
 
 const DIAG_HIGH =
   /\b(болезн|вредител|плесен|гриб|дефицит|токсич|загн|pests?|mold|deficienc|disease|вирус)\b/i;
@@ -40,6 +42,7 @@ export function classifyQueryIntent(queryText: string): IntentClassification {
 
   const scores: { intent: RetrievalIntentType; hit: boolean }[] = [
     { intent: 'daily_focus', hit: DAILY.test(q) },
+    { intent: 'full_cycle', hit: FULL_CYCLE.test(q) },
     { intent: 'sop_execution_dialog', hit: SOP.test(q) },
     { intent: 'report', hit: REPORT.test(q) },
     { intent: 'exploration', hit: EXPLORATION.test(q) },
@@ -60,7 +63,12 @@ export function classifyQueryIntent(queryText: string): IntentClassification {
       : 'low';
 
   const requiresHistoricalContext =
-    primary === 'causal' || primary === 'planning' || subIntents.includes('planning');
+    primary === 'causal' ||
+    primary === 'planning' ||
+    primary === 'full_cycle' ||
+    primary === 'report' ||
+    subIntents.includes('planning') ||
+    subIntents.includes('full_cycle');
 
   const requiresKnowledgeContext =
     primary === 'action' ||

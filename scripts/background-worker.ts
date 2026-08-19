@@ -18,6 +18,12 @@ import {
   failBackgroundJob,
 } from '../lib/growlog/background-worker-core';
 import {
+  processDocumentIndexJob,
+  processFocusRefreshJob,
+  processSnapshotRefreshJob,
+  processTimelineDailyRefreshJob,
+} from '../lib/growlog/derived-data-pipeline';
+import {
   processPhotoAnalyzeJob,
   processPhotoTimelineRefreshJob,
 } from '../lib/growlog/photo-pipeline';
@@ -49,10 +55,13 @@ async function processJob(
     case 'report.generate':
       return processReportGenerateJob(supabase, job);
     case 'document.index':
+      return processDocumentIndexJob(supabase, job);
     case 'timeline.daily.refresh':
+      return processTimelineDailyRefreshJob(supabase, job);
     case 'focus.refresh':
+      return processFocusRefreshJob(supabase, job);
     case 'snapshot.refresh':
-      return { handled: true, stub: true, job_type: job.job_type };
+      return processSnapshotRefreshJob(supabase, job);
     default:
       return { handled: true, stub: true, unknown_job_type: job.job_type };
   }

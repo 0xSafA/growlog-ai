@@ -21,6 +21,7 @@ import {
 } from 'react';
 
 const FARM_STORAGE_KEY = 'growlog_active_farm_id';
+const SCOPE_STORAGE_KEY = 'growlog_active_scope_id';
 
 type FarmContextValue = {
   supabase: ReturnType<typeof createClient>;
@@ -33,6 +34,8 @@ type FarmContextValue = {
   setFarmId: (id: string) => void;
   cycle: GrowCycle | null;
   scopes: Scope[];
+  scopeId: string | null;
+  setScopeId: (id: string) => void;
   primaryScope: Scope | null;
   todayEvents: EventRow[];
   recentEvents: EventRow[];
@@ -47,6 +50,7 @@ export function FarmProvider({ children }: { children: React.ReactNode }) {
   const [userId, setUserId] = useState<string | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [farmId, setFarmIdState] = useState<string | null>(null);
+  const [scopeId, setScopeIdState] = useState<string | null>(null);
 
   useEffect(() => {
     const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
@@ -95,7 +99,28 @@ export function FarmProvider({ children }: { children: React.ReactNode }) {
     queryFn: () => fetchScopesForCycle(supabase, cycleQuery.data!.id),
   });
 
-  const primaryScope = scopesQuery.data?.[0] ?? null;
+  useEffect(() => {
+    if (!scopesQuery.data?.length) {
+      setScopeIdState(null);
+      return;
+    }
+    const stored =
+      typeof window !== 'undefined' ? localStorage.getItem(SCOPE_STORAGE_KEY) : null;
+    const valid = stored && scopesQuery.data.some((s) => s.id === stored);
+    if (valid) {
+      setScopeIdState(stored);
+      return;
+    }
+    setScopeIdState(scopesQuery.data[0].id);
+  }, [scopesQuery.data]);
+
+  const setScopeId = useCallback((id: string) => {
+    localStorage.setItem(SCOPE_STORAGE_KEY, id);
+    setScopeIdState(id);
+  }, []);
+
+  const primaryScope =
+    scopesQuery.data?.find((s) => s.id === scopeId) ?? scopesQuery.data?.[0] ?? null;
 
   const recentQuery = useQuery({
     queryKey: ['events-recent', farmId, cycleQuery.data?.id],
@@ -147,6 +172,8 @@ export function FarmProvider({ children }: { children: React.ReactNode }) {
     setFarmId,
     cycle: cycleQuery.data ?? null,
     scopes: scopesQuery.data ?? [],
+    scopeId,
+    setScopeId,
     primaryScope,
     todayEvents: todayQuery.data ?? [],
     recentEvents: recentQuery.data ?? [],

@@ -34,7 +34,7 @@ export default function OnboardingPage() {
   useEffect(() => {
     if (!farmListReady) return;
     if (farms.length > 0) {
-      void router.replace('/');
+      void router.replace('/dashboard');
     }
   }, [farmListReady, farms.length, router]);
 
@@ -54,7 +54,7 @@ export default function OnboardingPage() {
         stage,
       });
       await refetchAll();
-      await router.replace('/');
+      await router.replace('/dashboard');
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Ошибка');
     } finally {

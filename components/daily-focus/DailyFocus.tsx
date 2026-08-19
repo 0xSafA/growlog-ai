@@ -9,6 +9,7 @@ import type { EventType } from '@/types/domain';
 import { formatInTimeZone } from 'date-fns-tz';
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
+import { useState } from 'react';
 import {
   AlertTriangle,
   Brain,
@@ -17,6 +18,7 @@ import {
   MessageCircle,
   Mic,
   Sparkles,
+  Volume2,
 } from 'lucide-react';
 
 const RISK_EVENT_TYPES: Set<EventType> = new Set([
@@ -136,6 +138,31 @@ export function DailyFocus() {
   );
 
   const topInsight = focusInsightsQuery.data?.[0];
+  const [ttsPending, setTtsPending] = useState(false);
+
+  async function speakFocus(text: string) {
+    setTtsPending(true);
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      if (!token) return;
+      const res = await fetch('/api/voice/speak', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ text: text.slice(0, 2000) }),
+      });
+      if (!res.ok) return;
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const audio = new Audio(url);
+      await audio.play();
+    } finally {
+      setTtsPending(false);
+    }
+  }
 
   return (
     <div className="space-y-5">
@@ -326,6 +353,17 @@ export function DailyFocus() {
                 </div>
                 <Button asChild variant="link" className="h-auto px-0 text-xs">
                   <Link href="/assistant">Подробнее в ассистенте →</Link>
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="mt-1"
+                  disabled={ttsPending}
+                  onClick={() => void speakFocus(topInsight.body)}
+                >
+                  <Volume2 className="mr-2 h-4 w-4" />
+                  {ttsPending ? 'Готовлю…' : 'Озвучить'}
                 </Button>
               </div>
             )}

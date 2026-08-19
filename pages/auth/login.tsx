@@ -22,7 +22,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (authLoading) return;
-    if (userId) void router.replace('/');
+    if (userId) void router.replace('/dashboard');
   }, [authLoading, userId, router]);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -37,7 +37,7 @@ export default function LoginPage() {
         const { error: err } = await supabase.auth.signUp({ email, password });
         if (err) throw err;
       }
-      await router.replace('/');
+      await router.replace('/dashboard');
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Ошибка входа');
     } finally {

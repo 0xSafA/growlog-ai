@@ -125,6 +125,23 @@ export function formatRetrievalContextForPrompt(ctx: AnswerAssemblyContext): str
       )
     )
   );
+  lines.push(
+    ...lineBlock(
+      'conversation_history',
+      ctx.conversationHistory.map(
+        (m) => `[${m.role}] ${m.createdAt}: ${m.messageText.slice(0, 500)}`
+      )
+    )
+  );
+  lines.push(
+    ...lineBlock(
+      'environmental_daily_stats',
+      ctx.environmentalStats.map(
+        (s) =>
+          `${s.statDate} | ${s.metricName} (${s.metricCode}) min=${s.minValue} max=${s.maxValue} avg=${s.avgValue}${s.unit ? ` ${s.unit}` : ''} (n=${s.readingCount})`
+      )
+    )
+  );
 
   lines.push('');
   lines.push('--- missing_data ---');

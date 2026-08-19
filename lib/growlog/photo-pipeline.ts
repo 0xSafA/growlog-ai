@@ -274,6 +274,22 @@ export async function processPhotoAnalyzeJob(
       anchorMediaAssetId: mediaAssetId,
     });
 
+    if (upserted?.id) {
+      await supabase.from('background_jobs').insert({
+        job_type: 'document.index',
+        status: 'pending',
+        priority: 'normal',
+        farm_id: farmId,
+        cycle_id: asset.cycle_id,
+        scope_id: asset.scope_id,
+        entity_type: 'photo_analysis',
+        entity_id: upserted.id,
+        scheduled_for: new Date().toISOString(),
+        dedup_key: `document.index:photo_analysis:${upserted.id}`,
+        payload_json: { doc_type: 'photo_analysis', source_id: upserted.id },
+      });
+    }
+
     return {
       photo_analysis_id: upserted?.id,
       analysis_version: analysisVersion,

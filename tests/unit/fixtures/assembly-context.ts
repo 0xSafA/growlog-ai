@@ -78,6 +78,8 @@ export function makeAnswerAssemblyContext(
     observations: [],
     recentActions: [],
     dailyTimelines: [],
+    conversationHistory: [],
+    environmentalStats: [],
     missingData: [],
     guardrails: defaultGuardrails,
   };

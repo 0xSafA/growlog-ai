@@ -9,6 +9,7 @@ export const RETRIEVAL_INTENTS = [
   'planning',
   'report',
   'exploration',
+  'full_cycle',
   'sop_execution_dialog',
   'daily_focus',
   'unknown',
@@ -174,6 +175,25 @@ export type DailyTimelineItem = {
   anomalyCount: number;
 };
 
+export type ConversationMessageItem = {
+  id: string;
+  role: 'user' | 'assistant' | 'system';
+  messageText: string;
+  createdAt: string;
+};
+
+export type EnvironmentalStatItem = {
+  id: string;
+  statDate: string;
+  metricCode: string;
+  metricName: string;
+  minValue: number;
+  maxValue: number;
+  avgValue: number;
+  readingCount: number;
+  unit: string | null;
+};
+
 export type AiInsightRefItem = {
   id: string;
   insightType: string;
@@ -232,6 +252,10 @@ export type AnswerAssemblyContext = {
   observations: ScoredLine<ObservationItem>[];
   recentActions: ScoredLine<ActionLogItem>[];
   dailyTimelines: DailyTimelineItem[];
+  /** Prior turns in the same advisor conversation (if conversationId set). */
+  conversationHistory: ConversationMessageItem[];
+  /** Daily min/max/avg sensor aggregates for the retrieval window. */
+  environmentalStats: EnvironmentalStatItem[];
   missingData: string[];
   guardrails: AssemblyGuardrails;
 };

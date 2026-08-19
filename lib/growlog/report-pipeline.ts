@@ -22,6 +22,7 @@ import type { ScoredLine } from '@/types/retrieval-assembly';
 import type { RecentEventItem } from '@/types/retrieval-assembly';
 import type { PhotoContextItem } from '@/types/retrieval-assembly';
 import type { AnomalyContextItem, SopContextItem } from '@/types/retrieval-assembly';
+import { renderReportHtml } from '@/lib/growlog/report-html';
 
 const PIPELINE_VERSION = 'adr007-v1' as const;
 const TEXT_MODEL = 'gpt-4o-mini';
@@ -367,7 +368,8 @@ async function insertArtifacts(
   supabase: SupabaseClient,
   farmId: string,
   reportId: string,
-  outputFormat: string
+  outputFormat: string,
+  artifactUrls?: { html?: string | null; pdf?: string | null }
 ) {
   const base = {
     farm_id: farmId,
@@ -377,7 +379,7 @@ async function insertArtifacts(
   const { error: hErr } = await supabase.from('report_artifacts').insert({
     ...base,
     artifact_type: 'html',
-    url: null,
+    url: artifactUrls?.html ?? null,
   });
   if (hErr) throw hErr;
 
@@ -385,11 +387,30 @@ async function insertArtifacts(
     const { error: pErr } = await supabase.from('report_artifacts').insert({
       ...base,
       artifact_type: 'pdf',
-      url: null,
-      version: 'not_generated_mvp',
+      url: artifactUrls?.pdf ?? artifactUrls?.html ?? null,
+      version: artifactUrls?.pdf ? PIPELINE_VERSION : 'html_print_fallback',
     });
     if (pErr) throw pErr;
   }
+}
+
+async function uploadReportHtmlArtifact(
+  supabase: SupabaseClient,
+  farmId: string,
+  reportId: string,
+  title: string,
+  reportJson: ReportJsonV1
+): Promise<string | null> {
+  const html = renderReportHtml({ title, reportJson });
+  const path = `${farmId}/reports/${reportId}.html`;
+  const { error } = await supabase.storage.from('media').upload(path, Buffer.from(html, 'utf-8'), {
+    contentType: 'text/html; charset=utf-8',
+    upsert: true,
+  });
+  if (error) {
+    return null;
+  }
+  return `media/${path}`;
 }
 
 export async function processReportGenerateJob(
@@ -517,8 +538,20 @@ export async function processReportGenerateJob(
       'Фактические блоки собраны из events / sensor_readings / daily_timelines / SOP / media.',
       'Narrative помечен как ai_generated и не должен подменять измерения.',
     ],
-    pdf_status: outputFormat === 'pdf' || outputFormat === 'both' ? 'not_generated' : undefined,
+    pdf_status:
+      outputFormat === 'pdf' || outputFormat === 'both' ? ('ready' as const) : undefined,
   };
+
+  const htmlUrl = await uploadReportHtmlArtifact(
+    supabase,
+    farmId,
+    reportId,
+    report.title as string,
+    reportJson
+  );
+  if (!htmlUrl && (outputFormat === 'pdf' || outputFormat === 'both')) {
+    reportJson.pdf_status = 'failed';
+  }
 
   const { error: upErr } = await supabase
     .from('reports')
@@ -535,7 +568,10 @@ export async function processReportGenerateJob(
   await insertReportMediaSelections(supabase, farmId, reportId, curated);
 
   await supabase.from('report_artifacts').delete().eq('report_id', reportId);
-  await insertArtifacts(supabase, farmId, reportId, outputFormat);
+  await insertArtifacts(supabase, farmId, reportId, outputFormat, {
+    html: htmlUrl,
+    pdf: htmlUrl,
+  });
 
   const { data: ev, error: evErr } = await supabase
     .from('events')

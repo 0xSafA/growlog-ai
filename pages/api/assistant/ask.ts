@@ -14,6 +14,7 @@ import {
   isRetrievalEmptyForAdvice,
 } from '@/lib/assistant/deterministic-insight';
 import { insertInsightWithGrounding } from '@/lib/assistant/persist-insight';
+import { persistConversationTurn } from '@/lib/assistant/conversation-messages';
 import {
   assembleAnswerContext,
   formatRetrievalContextForPrompt,
@@ -118,7 +119,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     modelUsed = 'deterministic_empty_context';
   } else {
     const contextBlock = formatRetrievalContextForPrompt(pack);
-    const userContent = `Контекст фермы:\n${contextBlock}\n\n---\nВопрос пользователя:\n${message}`;
+    const historyBlock =
+      pack.conversationHistory.length > 0
+        ? `\n\n--- prior_turns ---\n${pack.conversationHistory
+            .map((m) => `[${m.role}] ${m.messageText}`)
+            .join('\n')}\n`
+        : '';
+    const userContent = `Контекст фермы:\n${contextBlock}${historyBlock}\n\n---\nВопрос пользователя:\n${message}`;
 
     let raw: string;
     try {
@@ -162,6 +169,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       : {};
 
   if (!trust.persistInsight) {
+    if (conversationId) {
+      try {
+        await persistConversationTurn(supabase, {
+          farmId: body.farmId,
+          conversationId,
+          cycleId,
+          scopeId,
+          userId: user.id,
+          userMessage: message,
+          assistantMessage: out.body,
+        });
+      } catch {
+        /* non-fatal */
+      }
+    }
     return res.status(200).json({
       insightId: null,
       persisted: false,
@@ -194,6 +216,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   });
 
   if (insertResult.error || !insertResult.insightId) {
+    if (conversationId) {
+      try {
+        await persistConversationTurn(supabase, {
+          farmId: body.farmId,
+          conversationId,
+          cycleId,
+          scopeId,
+          userId: user.id,
+          userMessage: message,
+          assistantMessage: out.body,
+        });
+      } catch {
+        /* non-fatal */
+      }
+    }
     return res.status(200).json({
       insightId: null,
       persisted: false,
@@ -206,6 +243,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       persistRpc: insertResult.usedRpc,
       ...out,
     });
+  }
+
+  if (conversationId) {
+    try {
+      await persistConversationTurn(supabase, {
+        farmId: body.farmId,
+        conversationId,
+        cycleId,
+        scopeId,
+        userId: user.id,
+        userMessage: message,
+        assistantMessage: out.body,
+        insightId: insertResult.insightId,
+      });
+    } catch {
+      /* non-fatal */
+    }
   }
 
   return res.status(200).json({

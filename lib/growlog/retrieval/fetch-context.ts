@@ -29,7 +29,9 @@ const MAX_ANOMALIES = 18;
 const MAX_OBS = 24;
 const MAX_ACTIONS = 20;
 const MAX_LINKS = 24;
-const MAX_TIMELINES = 14;
+const MAX_TIMELINES = 60;
+const MAX_CONVERSATION_TURNS = 12;
+const MAX_ENV_STATS = 40;
 const MAX_HIST = 5;
 const MAX_PATTERN_INSIGHTS = 5;
 const MAX_SEARCH_DOCS = 8;
@@ -841,4 +843,118 @@ export async function fetchSearchableDocuments(
     knowledge: score(knowledge, () => window.to, window),
     memory: score(memory, () => window.to, window),
   };
+}
+
+export async function fetchConversationMessages(
+  supabase: SupabaseClient,
+  params: {
+    farmId: string;
+    conversationId: string | null;
+    limit?: number;
+  }
+): Promise<import('@/types/retrieval-assembly').ConversationMessageItem[]> {
+  if (!params.conversationId) return [];
+
+  const { data, error } = await supabase
+    .from('conversation_messages')
+    .select('id, role, message_text, created_at')
+    .eq('farm_id', params.farmId)
+    .eq('conversation_id', params.conversationId)
+    .order('created_at', { ascending: true })
+    .limit(params.limit ?? MAX_CONVERSATION_TURNS);
+
+  if (error) {
+    if (
+      error.code === '42703' ||
+      error.code === 'PGRST204' ||
+      /conversation_id/i.test(error.message ?? '')
+    ) {
+      return [];
+    }
+    throw error;
+  }
+
+  return (data ?? [])
+    .filter((r) => (r as { message_text: string | null }).message_text)
+    .map((r) => {
+      const row = r as {
+        id: string;
+        role: string;
+        message_text: string;
+        created_at: string;
+      };
+      return {
+        id: row.id,
+        role: row.role as 'user' | 'assistant' | 'system',
+        messageText: row.message_text,
+        createdAt: row.created_at,
+      };
+    });
+}
+
+export async function fetchEnvironmentalDailyStats(
+  supabase: SupabaseClient,
+  params: {
+    farmId: string;
+    cycleId: string | null;
+    scopeId: string | null;
+    window: TimeWindowIso;
+  }
+): Promise<import('@/types/retrieval-assembly').EnvironmentalStatItem[]> {
+  const fromD = params.window.from.slice(0, 10);
+  const toD = params.window.to.slice(0, 10);
+
+  let q = supabase
+    .from('environmental_daily_stats')
+    .select(
+      'id, stat_date, min_value, max_value, avg_value, reading_count, metric_id, sensor_metrics(code, name, unit)'
+    )
+    .eq('farm_id', params.farmId)
+    .gte('stat_date', fromD)
+    .lte('stat_date', toD)
+    .order('stat_date', { ascending: false })
+    .limit(MAX_ENV_STATS);
+
+  if (params.cycleId) q = q.eq('cycle_id', params.cycleId);
+  if (params.scopeId) q = q.eq('scope_id', params.scopeId);
+
+  const { data, error } = await q;
+  if (error) {
+    if (error.code === '42P01') return [];
+    throw error;
+  }
+
+  return (data ?? []).map((r) => {
+    const raw = r as Record<string, unknown>;
+    const sm = raw.sensor_metrics as { code: string; name: string; unit: string | null } | null;
+    return {
+      id: raw.id as string,
+      statDate: raw.stat_date as string,
+      metricCode: sm?.code ?? 'unknown',
+      metricName: sm?.name ?? 'metric',
+      minValue: Number(raw.min_value),
+      maxValue: Number(raw.max_value),
+      avgValue: Number(raw.avg_value),
+      readingCount: raw.reading_count as number,
+      unit: sm?.unit ?? null,
+    };
+  });
+}
+
+/** Compress daily timeline summaries when the cycle window is long (ADR-003 compression). */
+export function compressDailyTimelines(
+  timelines: import('@/types/retrieval-assembly').DailyTimelineItem[],
+  maxItems = MAX_TIMELINES
+): import('@/types/retrieval-assembly').DailyTimelineItem[] {
+  if (timelines.length <= maxItems) return timelines;
+  const sorted = [...timelines].sort((a, b) => b.timelineDate.localeCompare(a.timelineDate));
+  const withAnomalies = sorted.filter((t) => t.anomalyCount > 0);
+  const rest = sorted.filter((t) => t.anomalyCount === 0);
+  const picked = new Map<string, import('@/types/retrieval-assembly').DailyTimelineItem>();
+  for (const t of withAnomalies) picked.set(t.id, t);
+  for (const t of rest) {
+    if (picked.size >= maxItems) break;
+    picked.set(t.id, t);
+  }
+  return [...picked.values()].sort((a, b) => b.timelineDate.localeCompare(a.timelineDate));
 }

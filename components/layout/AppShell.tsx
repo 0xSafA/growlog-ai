@@ -22,7 +22,7 @@ import { useRouter } from 'next/router';
 
 /** ADR-005: five core modes; capture is the FAB, not a sixth tab. */
 const nav = [
-  { href: '/', label: 'Фокус', icon: Home },
+  { href: '/dashboard', label: 'Фокус', icon: Home },
   { href: '/timeline', label: 'Таймлайн', icon: List },
   { href: '/assistant', label: 'ИИ', icon: MessageCircle, modeTitle: 'Ассистент' },
   { href: '/sop', label: 'SOP', icon: ClipboardCheck },
@@ -30,7 +30,7 @@ const nav = [
 ];
 
 function isNavActive(pathname: string, href: string) {
-  if (href === '/') return pathname === '/';
+  if (href === '/dashboard') return pathname === '/dashboard';
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 

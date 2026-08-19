@@ -10,7 +10,8 @@ import Head from 'next/head';
 import { useEffect, useState } from 'react';
 
 function SettingsBody() {
-  const { supabase, farms, farmId, setFarmId, cycle, refetchAll } = useFarmContext();
+  const { supabase, farms, farmId, setFarmId, cycle, scopes, scopeId, setScopeId, refetchAll } =
+    useFarmContext();
   const farm = farms.find((f) => f.id === farmId);
   const [name, setName] = useState(farm?.name ?? '');
   const [pending, setPending] = useState(false);
@@ -86,7 +87,116 @@ function SettingsBody() {
           </CardHeader>
         </Card>
       )}
+
+      <ScopesAndPlantsSettings />
     </div>
+  );
+}
+
+function ScopesAndPlantsSettings() {
+  const { supabase, farmId, cycle, scopes, scopeId, setScopeId } = useFarmContext();
+  const [plants, setPlants] = useState<{ id: string; plant_code: string; status: string }[]>([]);
+  const [plantLabel, setPlantLabel] = useState('');
+  const [loadingPlants, setLoadingPlants] = useState(false);
+
+  useEffect(() => {
+    if (!farmId || !cycle?.id) return;
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from('plants')
+        .select('id, plant_code, status')
+        .eq('farm_id', farmId)
+        .eq('cycle_id', cycle.id)
+        .order('created_at', { ascending: true });
+      if (!cancelled) setPlants((data ?? []) as { id: string; plant_code: string; status: string }[]);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [supabase, farmId, cycle?.id]);
+
+  async function addPlant(e: React.FormEvent) {
+    e.preventDefault();
+    if (!farmId || !cycle?.id) return;
+    setLoadingPlants(true);
+    try {
+      const code = plantLabel.trim() || `plant-${Date.now()}`;
+      const { error } = await supabase.from('plants').insert({
+        farm_id: farmId,
+        cycle_id: cycle.id,
+        plant_code: code,
+        status: 'active',
+      });
+      if (error) throw error;
+      setPlantLabel('');
+      const { data } = await supabase
+        .from('plants')
+        .select('id, plant_code, status')
+        .eq('farm_id', farmId)
+        .eq('cycle_id', cycle.id);
+      setPlants((data ?? []) as { id: string; plant_code: string; status: string }[]);
+    } finally {
+      setLoadingPlants(false);
+    }
+  }
+
+  if (!cycle) return null;
+
+  return (
+    <>
+      {scopes.length > 1 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Область (scope)</CardTitle>
+            <CardDescription>Контекст для журнала, датчиков и AI.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <select
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              value={scopeId ?? ''}
+              onChange={(e) => setScopeId(e.target.value)}
+            >
+              {scopes.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.display_name || s.scope_type}
+                </option>
+              ))}
+            </select>
+          </CardContent>
+        </Card>
+      )}
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Растения цикла</CardTitle>
+          <CardDescription>Метки растений в текущем scope (ADR-002 `plants`).</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {plants.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Растений пока нет.</p>
+          ) : (
+            <ul className="text-sm space-y-1">
+              {plants.map((p) => (
+                <li key={p.id}>
+                  {p.plant_code} · <span className="text-muted-foreground">{p.status}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+          <form onSubmit={addPlant} className="flex gap-2">
+            <Input
+              placeholder="Метка (например, Tent A #1)"
+              value={plantLabel}
+              onChange={(e) => setPlantLabel(e.target.value)}
+            />
+            <Button type="submit" size="sm" disabled={loadingPlants}>
+              Добавить
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+    </>
   );
 }
 

@@ -4,15 +4,19 @@ import { classifyQueryIntent } from '@/lib/growlog/retrieval/classify-intent';
 import {
   applyRequestedTimeWindow,
   parseRequestedTimeWindow,
+  recentRawFactsWindow,
   resolveQueryScope,
 } from '@/lib/growlog/retrieval/resolve-scope';
 import { buildGuardrailsAndMissingData } from '@/lib/growlog/retrieval/guardrails';
 import {
+  compressDailyTimelines,
   fetchActionsForEventIds,
   fetchAnomalyEvents,
   fetchCausalLinks,
+  fetchConversationMessages,
   fetchCycle,
   fetchDailyTimelines,
+  fetchEnvironmentalDailyStats,
   fetchFarmTimezone,
   fetchHistoricalCycles,
   fetchObservationsForEventIds,
@@ -44,11 +48,15 @@ export async function assembleAnswerContext(
   }
 ): Promise<AnswerAssemblyContext> {
   const intentMeta = classifyQueryIntent(params.queryText);
+
+  const cycleEarly = await fetchCycle(supabase, params.farmId, params.cycleId);
+
   let resolved = resolveQueryScope({
     farmId: params.farmId,
     cycleId: params.cycleId,
     scopeId: params.scopeId,
     intentType: intentMeta.intentType,
+    cycleStartDate: cycleEarly?.start_date ?? null,
   });
 
   const parsedTw = parseRequestedTimeWindow(params.requestedTimeWindow);
@@ -63,6 +71,7 @@ export async function assembleAnswerContext(
   }
 
   const window = resolved.timeWindow;
+  const recentWindow = recentRawFactsWindow(new Date(window.to));
   const keyword = pickSearchKeyword(params.queryText);
 
   const [
@@ -75,16 +84,18 @@ export async function assembleAnswerContext(
     photoContext,
     photoTimelineSignals,
     sopContext,
-    dailyTimelines,
+    dailyTimelinesRaw,
+    conversationHistory,
+    environmentalStats,
   ] = await Promise.all([
     fetchFarmTimezone(supabase, params.farmId),
-    fetchCycle(supabase, params.farmId, params.cycleId),
+    Promise.resolve(cycleEarly),
     fetchScopeHint(supabase, params.farmId, params.scopeId),
     fetchRecentEvents(supabase, {
       farmId: params.farmId,
       cycleId: params.cycleId,
       scopeId: params.scopeId,
-      window,
+      window: recentWindow,
     }),
     fetchAnomalyEvents(supabase, {
       farmId: params.farmId,
@@ -96,13 +107,13 @@ export async function assembleAnswerContext(
       farmId: params.farmId,
       cycleId: params.cycleId,
       scopeId: params.scopeId,
-      window,
+      window: recentWindow,
     }),
     fetchPhotosWithAnalysis(supabase, {
       farmId: params.farmId,
       cycleId: params.cycleId,
       scopeId: params.scopeId,
-      limit: intentMeta.requiresPhotoContext ? 12 : 6,
+      limit: intentMeta.requiresPhotoContext ? 24 : 12,
       window,
     }),
     fetchPhotoTimelineSignals(supabase, {
@@ -118,7 +129,19 @@ export async function assembleAnswerContext(
       scopeId: params.scopeId,
       window,
     }),
+    fetchConversationMessages(supabase, {
+      farmId: params.farmId,
+      conversationId: params.conversationId ?? null,
+    }),
+    fetchEnvironmentalDailyStats(supabase, {
+      farmId: params.farmId,
+      cycleId: params.cycleId,
+      scopeId: params.scopeId,
+      window,
+    }),
   ]);
+
+  const dailyTimelines = compressDailyTimelines(dailyTimelinesRaw);
 
   const eventIdsForChildren = [
     ...new Set([
@@ -130,7 +153,9 @@ export async function assembleAnswerContext(
   const [observations, recentActions, causalContext] = await Promise.all([
     fetchObservationsForEventIds(supabase, params.farmId, eventIdsForChildren, window),
     fetchActionsForEventIds(supabase, params.farmId, eventIdsForChildren, window),
-    intentMeta.intentType === 'causal' || intentMeta.intentType === 'planning'
+    intentMeta.intentType === 'causal' ||
+    intentMeta.intentType === 'planning' ||
+    intentMeta.intentType === 'full_cycle'
       ? fetchCausalLinks(supabase, params.farmId, eventIdsForChildren)
       : Promise.resolve([]),
   ]);
@@ -206,6 +231,8 @@ export async function assembleAnswerContext(
     observations,
     recentActions,
     dailyTimelines,
+    conversationHistory,
+    environmentalStats,
     missingData: [],
     guardrails: {
       mustNotClaimWithoutEvidence: true,
