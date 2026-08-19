@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslation } from '@/components/providers/I18nProvider';
 import type { ReportBlock } from '@/types/report';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { useEffect, useState } from 'react';
@@ -22,14 +23,15 @@ async function signedImageUrl(
 }
 
 function TrustBadge({ trust }: { trust: string }) {
+  const { t } = useTranslation();
   const label =
     trust === 'ai_generated'
-      ? 'AI narrative'
+      ? t('reports.trustAiGenerated')
       : trust === 'derived_metric'
-        ? 'Сводка из данных'
+        ? t('reports.trustDerivedMetric')
         : trust === 'missing_data'
-          ? 'Нет данных'
-          : 'Факт';
+          ? t('reports.trustMissingData')
+          : t('reports.trustFact');
   return (
     <span className="text-[10px] uppercase tracking-wide text-muted-foreground border border-border rounded px-1.5 py-0.5">
       {label}
@@ -44,6 +46,7 @@ export function ReportViewer({
   blocks: ReportBlock[];
   supabase: SupabaseClient;
 }) {
+  const { t } = useTranslation();
   const [urls, setUrls] = useState<Record<string, string | null>>({});
 
   useEffect(() => {
@@ -77,7 +80,9 @@ export function ReportViewer({
               <header key={key} className="space-y-1 border-b border-border pb-4">
                 <h2 className="text-xl font-semibold leading-tight">{b.title}</h2>
                 <p className="text-sm text-muted-foreground">{b.periodLabel}</p>
-                <p className="text-sm">Scope: {b.scopeLabel}</p>
+                <p className="text-sm">
+                  {t('reports.scopeLabel')} {b.scopeLabel}
+                </p>
                 {(b.cycleName || b.cycleStage) && (
                   <p className="text-sm text-muted-foreground">
                     {b.cycleName}
@@ -136,7 +141,7 @@ export function ReportViewer({
               <section key={key} className="space-y-2">
                 <h3 className="text-base font-medium">{b.title}</h3>
                 {b.items.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">Нет записей в выборке.</p>
+                  <p className="text-sm text-muted-foreground">{t('reports.noAnomaliesInSample')}</p>
                 ) : (
                   <ul className="space-y-2 text-sm">
                     {b.items.map((e, j) => (
@@ -165,7 +170,9 @@ export function ReportViewer({
                       <span>{s.title}</span>
                       <span className="text-xs text-muted-foreground">
                         {s.status}
-                        {s.dueAt ? ` · до ${s.dueAt.slice(0, 16)}` : ''}
+                        {s.dueAt
+                          ? ` · ${t('sop.dueAt', { date: s.dueAt.slice(0, 16) })}`
+                          : ''}
                       </span>
                     </li>
                   ))}
@@ -189,7 +196,7 @@ export function ReportViewer({
                           <img src={src} alt="" className="h-44 w-full object-cover" />
                         ) : (
                           <div className="flex h-44 items-center justify-center text-xs text-muted-foreground">
-                            Загрузка…
+                            {t('reports.loadingImage')}
                           </div>
                         )}
                         <figcaption className="px-2 py-1.5 text-xs text-muted-foreground">

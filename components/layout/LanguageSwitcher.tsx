@@ -1,37 +1,54 @@
 'use client';
 
 import { useTranslation } from '@/components/providers/I18nProvider';
-import { LOCALE_LABELS, LOCALES, type Locale } from '@/lib/i18n/locales';
+import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { normalizeLocaleInput } from '@/lib/i18n/locale-detection';
+import { LOCALE_LABELS, LOCALES } from '@/lib/i18n/locales';
 import { cn } from '@/lib/utils';
+import { Globe } from 'lucide-react';
 
 type Props = {
   className?: string;
-  compact?: boolean;
 };
 
-export function LanguageSwitcher({ className, compact }: Props) {
+export function LanguageSwitcher({ className }: Props) {
   const { locale, setLocale, t } = useTranslation();
 
   return (
-    <label className={cn('inline-flex items-center gap-1.5', className)}>
-      {!compact && (
-        <span className="sr-only">{t('language.label')}</span>
-      )}
-      <select
-        className={cn(
-          'rounded-md border border-input bg-background text-sm',
-          compact ? 'h-8 px-2 text-xs max-w-[7rem]' : 'h-9 px-2'
-        )}
-        value={locale}
-        onChange={(e) => setLocale(e.target.value as Locale)}
-        aria-label={t('language.label')}
-      >
-        {LOCALES.map((code) => (
-          <option key={code} value={code}>
-            {LOCALE_LABELS[code]}
-          </option>
-        ))}
-      </select>
-    </label>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="ghost"
+          size="icon"
+          className={cn('h-9 w-9 shrink-0', className)}
+          aria-label={t('language.label')}
+          title={LOCALE_LABELS[locale]}
+        >
+          <Globe className="h-5 w-5" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="max-h-[min(20rem,70vh)] overflow-y-auto">
+        <DropdownMenuRadioGroup
+          value={locale}
+          onValueChange={(value) => {
+            const next = normalizeLocaleInput(value);
+            if (next) setLocale(next);
+          }}
+        >
+          {LOCALES.map((code) => (
+            <DropdownMenuRadioItem key={code} value={code}>
+              {LOCALE_LABELS[code]}
+            </DropdownMenuRadioItem>
+          ))}
+        </DropdownMenuRadioGroup>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }

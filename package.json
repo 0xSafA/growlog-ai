@@ -12,6 +12,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:unit": "vitest run tests/unit",
+    "check-i18n": "tsx scripts/check-i18n.ts",
     "test:integration": "vitest run tests/integration",
     "test:integration:watch": "vitest tests/integration"
   },

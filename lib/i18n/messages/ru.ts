@@ -333,6 +333,13 @@ export const ru: Messages = {
     draftPending:
       'Отчёт ещё собирается worker-ом (`report.generate`). Обновите страницу через несколько секунд.',
     noBlocks: 'Нет блоков в report_json.',
+    trustAiGenerated: 'AI narrative',
+    trustDerivedMetric: 'Сводка из данных',
+    trustMissingData: 'Нет данных',
+    trustFact: 'Факт',
+    noAnomaliesInSample: 'Нет записей в выборке.',
+    scopeLabel: 'Scope:',
+    loadingImage: 'Загрузка…',
   },
 
   sop: {

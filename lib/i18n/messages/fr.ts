@@ -303,6 +303,13 @@ export const fr: Messages = {
     periodLabel: "Period:",
     draftPending: "Report is still being assembled by the worker (`report.generate`). Refresh in a few seconds.",
     noBlocks: "No blocks in report_json.",
+    trustAiGenerated: 'AI narrative',
+    trustDerivedMetric: 'Derived from data',
+    trustMissingData: 'Missing data',
+    trustFact: 'Fact',
+    noAnomaliesInSample: 'No entries in selection.',
+    scopeLabel: 'Scope:',
+    loadingImage: 'Loading…',
   },
   sop: {
     intro: "Phase 3 ADR-001: procedures, daily runs, execution.",

@@ -79,7 +79,7 @@ export function AppShell({
                   ))}
                 </select>
               )}
-              <LanguageSwitcher compact />
+              <LanguageSwitcher />
               <Button variant="ghost" size="icon" className="h-9 w-9" asChild>
                 <Link href="/photos" aria-label={t('nav.photos')}>
                   <Camera className="h-5 w-5" />

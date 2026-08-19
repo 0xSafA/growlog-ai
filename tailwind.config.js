@@ -53,6 +53,15 @@ module.exports = {
   				'3': 'hsl(var(--chart-3))',
   				'4': 'hsl(var(--chart-4))',
   				'5': 'hsl(var(--chart-5))'
+  			},
+  			grow: {
+  				forest: 'hsl(var(--grow-forest))',
+  				'forest-foreground': 'hsl(var(--grow-forest-foreground))',
+  				sage: 'hsl(var(--grow-sage))',
+  				moss: 'hsl(var(--grow-moss))',
+  				leaf: 'hsl(var(--grow-leaf))',
+  				earth: 'hsl(var(--grow-earth))',
+  				accent: 'hsl(var(--grow-accent))'
   			}
   		}
   	}

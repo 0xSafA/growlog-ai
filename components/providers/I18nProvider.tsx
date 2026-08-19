@@ -1,14 +1,14 @@
 'use client';
 
+import { normalizeLocaleInput } from '@/lib/i18n/locale-detection';
 import {
-  DEFAULT_LOCALE,
-  detectBrowserLocale,
-  isLocale,
-  LOCALE_STORAGE_KEY,
-  type Locale,
-} from '@/lib/i18n/locales';
+  persistClientLocale,
+  resolveClientLocale,
+} from '@/lib/i18n/locale-persist';
 import { messagesByLocale } from '@/lib/i18n/messages';
+import { DEFAULT_LOCALE, type Locale } from '@/lib/i18n/locales';
 import { createTranslator, type TranslateVars } from '@/lib/i18n/translate';
+import { useRouter } from 'next/router';
 import {
   createContext,
   useCallback,
@@ -26,39 +26,67 @@ type I18nContextValue = {
 
 const I18nContext = createContext<I18nContextValue | null>(null);
 
-function readStoredLocale(): Locale {
-  if (typeof window === 'undefined') return DEFAULT_LOCALE;
-  try {
-    const stored = localStorage.getItem(LOCALE_STORAGE_KEY);
-    if (stored && isLocale(stored)) return stored;
-  } catch {
-    /* ignore */
+function stripLangQueryFromUrl(): Locale | null {
+  if (typeof window === 'undefined') return null;
+  const params = new URLSearchParams(window.location.search);
+  const raw = params.get('lang');
+  if (!raw) return null;
+
+  const lang = normalizeLocaleInput(raw);
+
+  if (window.history.replaceState) {
+    params.delete('lang');
+    const qs = params.toString();
+    const next =
+      window.location.pathname + (qs ? `?${qs}` : '') + window.location.hash;
+    window.history.replaceState({}, '', next);
   }
-  return detectBrowserLocale();
+
+  if (lang) persistClientLocale(lang);
+  return lang;
+}
+
+function readInitialLocale(): Locale {
+  if (typeof window === 'undefined') return DEFAULT_LOCALE;
+  return stripLangQueryFromUrl() ?? resolveClientLocale({ persistIfMissing: false });
 }
 
 export function I18nProvider({ children }: { children: React.ReactNode }) {
-  const [locale, setLocaleState] = useState<Locale>(DEFAULT_LOCALE);
-  const [ready, setReady] = useState(false);
+  const router = useRouter();
+  const [locale, setLocaleState] = useState<Locale>(readInitialLocale);
 
   useEffect(() => {
-    setLocaleState(readStoredLocale());
-    setReady(true);
+    const resolved = resolveClientLocale({ persistIfMissing: true });
+    setLocaleState(resolved);
+    document.documentElement.lang = resolved;
   }, []);
+
+  // Client navigations to ?lang= on any route (incl. protected)
+  useEffect(() => {
+    if (!router.isReady) return;
+
+    const raw = router.query.lang;
+    if (typeof raw !== 'string') return;
+
+    const lang = normalizeLocaleInput(raw);
+
+    const { lang: _removed, ...rest } = router.query;
+    void router.replace({ pathname: router.pathname, query: rest }, undefined, {
+      shallow: true,
+    });
+
+    if (!lang) return;
+
+    setLocaleState(lang);
+    persistClientLocale(lang);
+    document.documentElement.lang = lang;
+  }, [router, router.isReady, router.pathname, router.query.lang]);
 
   const setLocale = useCallback((next: Locale) => {
     setLocaleState(next);
-    try {
-      localStorage.setItem(LOCALE_STORAGE_KEY, next);
-    } catch {
-      /* ignore */
-    }
+    persistClientLocale(next);
+    document.documentElement.lang = next;
   }, []);
-
-  useEffect(() => {
-    if (!ready) return;
-    document.documentElement.lang = locale;
-  }, [locale, ready]);
 
   const t = useMemo(() => createTranslator(messagesByLocale[locale]), [locale]);
 

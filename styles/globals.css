@@ -137,3 +137,24 @@ html.dark {
 .animate-slowping {
   animation: slowping 2.4s cubic-bezier(0, 0, 0.2, 1) infinite;
 }
+
+/* Botanical palette — scoped to public landing only */
+.landing-eco {
+  --grow-forest: 142 45% 28%;
+  --grow-forest-foreground: 0 0% 98%;
+  --grow-sage: 120 22% 95%;
+  --grow-moss: 95 35% 42%;
+  --grow-leaf: 134 41% 35%;
+  --grow-earth: 35 28% 92%;
+  --grow-accent: 88 40% 52%;
+}
+
+.dark .landing-eco {
+  --grow-forest: 142 45% 55%;
+  --grow-forest-foreground: 142 30% 10%;
+  --grow-sage: 140 12% 10%;
+  --grow-moss: 95 30% 48%;
+  --grow-leaf: 134 38% 48%;
+  --grow-earth: 35 12% 16%;
+  --grow-accent: 88 35% 58%;
+}
