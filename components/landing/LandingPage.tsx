@@ -94,7 +94,7 @@ export function LandingPage() {
   }
 
   return (
-    <div className="landing-eco min-h-screen bg-background text-foreground">
+    <div className="min-h-screen bg-background text-foreground">
       <header className="sticky top-0 z-50 border-b border-grow-leaf/15 bg-background/85 backdrop-blur-md">
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-4">
           <Link href="/" className="flex items-center gap-2 font-semibold tracking-tight">

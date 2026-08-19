@@ -24,7 +24,7 @@ export function CaptureFab({ className }: { className?: string }) {
         <Button
           asChild
           size="lg"
-          className="h-14 min-w-[min(100vw-2rem,20rem)] rounded-full shadow-lg shadow-primary/25 gap-2 text-base font-semibold"
+          className="h-14 min-w-[min(100vw-2rem,20rem)] gap-2 rounded-full text-base font-semibold shadow-lg shadow-primary/30"
         >
           <Link href="/log" aria-label={t('nav.captureAria')}>
             <Mic className="h-5 w-5" />

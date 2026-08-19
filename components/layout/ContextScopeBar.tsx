@@ -13,7 +13,7 @@ export function ContextScopeBar() {
   if (loading) {
     return (
       <p className="text-xs text-muted-foreground flex items-center gap-1.5">
-        <MapPin className="h-3.5 w-3.5 shrink-0 opacity-70" />
+        <MapPin className="h-3.5 w-3.5 shrink-0 text-grow-moss/80" />
         {t('scope.loading')}
       </p>
     );
@@ -35,7 +35,7 @@ export function ContextScopeBar() {
         className="text-xs text-muted-foreground flex items-start gap-1.5 leading-snug"
         title={t('scope.contextTitle')}
       >
-        <MapPin className="h-3.5 w-3.5 shrink-0 mt-0.5 opacity-70" />
+        <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-grow-moss/80" />
         <span className="min-w-0">{parts.join(' · ')}</span>
       </p>
       {scopes.length > 0 && (

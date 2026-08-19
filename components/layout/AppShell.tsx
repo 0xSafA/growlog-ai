@@ -17,6 +17,7 @@ import {
   LogOut,
   MessageCircle,
   Settings2,
+  Sprout,
   Thermometer,
 } from 'lucide-react';
 import Link from 'next/link';
@@ -57,12 +58,15 @@ export function AppShell({
   );
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col">
-      <header className="border-b border-border/80 bg-card/40 backdrop-blur-sm sticky top-0 z-40">
+    <div className="flex min-h-screen flex-col bg-background text-foreground">
+      <header className="sticky top-0 z-40 border-b border-grow-leaf/15 bg-gradient-to-b from-grow-sage/40 to-card/60 backdrop-blur-sm dark:from-grow-sage/15">
         <div className="mx-auto flex max-w-3xl flex-col gap-2 px-4 py-3">
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0 flex-1">
-              <p className="text-xs uppercase tracking-widest text-muted-foreground">{t('appName')}</p>
+              <p className="flex items-center gap-1.5 text-xs uppercase tracking-widest text-grow-moss">
+                <Sprout className="h-3 w-3" />
+                {t('appName')}
+              </p>
               <h1 className="truncate text-lg font-semibold leading-tight">{title}</h1>
             </div>
             <div className="flex shrink-0 items-center gap-0.5 sm:gap-1">
@@ -122,7 +126,7 @@ export function AppShell({
 
       {showCaptureFab && <CaptureFab />}
 
-      <nav className="sticky bottom-0 border-t border-border/80 bg-card/90 backdrop-blur-md">
+      <nav className="sticky bottom-0 border-t border-grow-leaf/15 bg-card/95 backdrop-blur-md">
         <div className="mx-auto flex max-w-3xl gap-0.5 overflow-x-auto px-2 py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] sm:gap-1">
           {nav.map(({ href, label, icon: Icon, modeTitle }) => {
             const active = isNavActive(pathname, href);
@@ -133,10 +137,10 @@ export function AppShell({
                 title={modeTitle ?? label}
                 aria-label={modeTitle ?? label}
                 className={cn(
-                  'flex min-w-[3.25rem] shrink-0 flex-col items-center justify-center rounded-lg py-2 text-[10px] font-medium transition-colors sm:min-w-[3.75rem] sm:text-[11px]',
+                  'flex min-w-[3.25rem] shrink-0 flex-col items-center justify-center rounded-xl py-2 text-[10px] font-medium transition-colors sm:min-w-[3.75rem] sm:text-[11px]',
                   active
-                    ? 'bg-primary/15 text-primary'
-                    : 'text-muted-foreground hover:text-foreground'
+                    ? 'bg-primary/15 text-primary shadow-sm shadow-primary/10'
+                    : 'text-muted-foreground hover:bg-grow-sage/50 hover:text-foreground'
                 )}
               >
                 <Icon className="mb-0.5 h-5 w-5" />
