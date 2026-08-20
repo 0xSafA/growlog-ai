@@ -3,7 +3,8 @@
 **Status:** Proposed
 **Date:** 2026-03-22
 **Author:** Team Growlog AI
-**Related:** ADR-001, ADR-002, ADR-003, ADR-004
+**Related:** ADR-001, ADR-002, ADR-003, ADR-004, ADR-011
+**Amendment:** 2026-08-20 — native mobile-first replaces PWA-first as primary client target.
 
 ---
 
@@ -497,7 +498,7 @@ The product must be:
 * easy to use one-handed
 * fast on mobile internet
 * usable on-site
-* PWA-first
+* **native mobile-first** (React Native / Expo as primary client per ADR-011)
 
 Practical consequences:
 
@@ -505,6 +506,16 @@ Practical consequences:
 * capture must open quickly
 * critical information should be visible without heavy tables
 * voice and photo flows must not break because of excessive forms
+
+Native mobile consequences (ADR-011):
+
+* **FAB / REC** is a persistent floating action button, not a web-only affordance
+* **Tab bar** maps to the five core modes; scope bar stays visible above content
+* **Push notifications** deliver SOP due/overdue reminders and critical anomalies
+* **Camera and gallery** use native pickers; photo capture must not depend on browser APIs
+* **Voice recording** uses native audio APIs with background-safe upload queue
+* **Offline capture queue** buffers log entries and photos when connectivity is poor; sync is deterministic, not LLM-driven
+* **Deep links** from notifications land directly in SOP execution or Daily Focus, not a generic home
 
 ---
 

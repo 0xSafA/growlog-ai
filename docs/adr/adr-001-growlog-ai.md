@@ -3,12 +3,15 @@ ADR-001: Growlog AI — журнал выращивания, контекстн�
 Статус: Proposed
 Дата: 2026-03-22
 Автор: A. Safiulin, OG Lab.
+Изменение: 2026-08-20 — primary client переведён с PWA на React Native (Expo). См. ADR-011.
 
 ⸻
 
 Контекст
 
-Growlog AI создаётся как PWA-приложение для гроверов и руководителей выращивания. Продукт должен решать сразу несколько задач:
+Growlog AI создаётся как **мобильное приложение React Native (Expo)** для гроверов и руководителей выращивания. Основной клиент — native mobile: voice-first capture, камера, push-уведомления, field-first UX (ADR-005, ADR-011). Опциональный web companion (Next.js) остаётся для landing, просмотра HTML-отчётов и admin-задач, но не заменяет mobile как primary surface.
+
+Продукт должен решать сразу несколько задач:
 	1.	Дать гроверу удобный способ быстро фиксировать происходящее на ферме:
 	•	голосом,
 	•	текстом,
@@ -178,6 +181,8 @@ SOP интегрированы в ядро системы и влияют на �
 	•	страница ассистента,
 	•	конструктор и экспорт Grow Report.
 
+Клиентская реализация presentation layer — React Native (Expo), см. ADR-011. Web companion покрывает HTML-отчёты и landing.
+
 5. Trust Layer
 	•	grounding ответа,
 	•	показывание уверенности,
@@ -186,18 +191,23 @@ SOP интегрированы в ядро системы и влияют на �
 
 Технологический стек:
 
-Клиент
-	•	Next.js
+Primary client (mobile)
+	•	React Native через Expo
 	•	TypeScript
-	•	PWA
-	•	shadcn/ui
-	•	TanStack Query
+	•	Expo Router для навигации
+	•	TanStack Query для server state
 	•	Zustand только для локального UI-state, а не как источник бизнес-данных
+	•	Expo modules: camera, audio recording, notifications, secure storage
+
+Web companion (secondary, optional)
+	•	Next.js — landing, HTML/PDF report viewer, admin
+	•	shadcn/ui + Tailwind — только для web companion, не для mobile
 
 Backend
-	•	Supabase (Postgres + Storage + Auth)
-	•	Supabase Edge Functions для AI-интеграций и webhooks
+	•	Supabase (Postgres + Storage + Auth) — единый backend для mobile и web
+	•	Supabase Edge Functions для AI-интеграций, webhooks и server-side use cases
 	•	Postgres cron / scheduled jobs для напоминаний и фоновых пересчётов
+	•	Background worker (отдельный процесс) для derived data pipeline (ADR-008)
 
 AI
 	•	Whisper или совместимый STT для голоса
@@ -206,7 +216,8 @@ AI
 	•	embeddings + retrieval для базы знаний и исторического контекста
 
 Deployment
-	•	Vercel для web-клиента
+	•	EAS Build / App Store + Google Play для mobile client
+	•	Vercel для web companion (landing, reports)
 	•	Supabase для БД, storage и auth
 
 Архитектурное правило:
