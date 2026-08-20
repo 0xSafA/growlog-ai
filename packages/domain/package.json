@@ -1,0 +1,19 @@
+{
+  "name": "@growlog/domain",
+  "version": "0.0.0",
+  "private": true,
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./growlog/queries": "./src/growlog/queries.ts",
+    "./growlog/mutations": "./src/growlog/mutations.ts",
+    "./types/*": "./src/types/*.ts"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.49.1"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.3"
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "strict": true,
+    "skipLibCheck": true,
+    "paths": {
+      "@/*": ["./*"],
+      "@growlog/domain": ["../../packages/domain/src/index.ts"],
+      "@growlog/domain/*": ["../../packages/domain/src/*"],
+      "@growlog/api-client": ["../../packages/api-client/src/index.ts"]
+    }
+  },
+  "include": [
+    "**/*.ts",
+    "**/*.tsx",
+    ".expo/types/**/*.ts",
+    "expo-env.d.ts"
+  ]
+}

@@ -4,6 +4,12 @@
     "paths": {
       "@/*": [
         "./*"
+      ],
+      "@growlog/domain": [
+        "./packages/domain/src/index.ts"
+      ],
+      "@growlog/domain/*": [
+        "./packages/domain/src/*"
       ]
     },
     "target": "esnext",
@@ -32,6 +38,7 @@
     "types"
   ],
   "exclude": [
-    "node_modules"
+    "node_modules",
+    "apps/mobile"
   ]
 }
