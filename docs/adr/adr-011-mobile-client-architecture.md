@@ -363,6 +363,8 @@ These ADR-governed rules apply unchanged on mobile:
 
 These belong in implementation specs or future ADRs.
 
+Implementation detail: [`docs/implementation/mobile-client-spec.md`](../implementation/mobile-client-spec.md) — monorepo scaffold, screen map, Phase 1 checklist.
+
 ---
 
 ## Consequences
