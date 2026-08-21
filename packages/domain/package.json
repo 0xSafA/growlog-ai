@@ -12,6 +12,8 @@
     "./growlog/sop-mutations": "./src/growlog/sop-mutations.ts",
     "./growlog/sop-engine-pure": "./src/growlog/sop-engine-pure.ts",
     "./growlog/sop-required-inputs": "./src/growlog/sop-required-inputs.ts",
+    "./growlog/photo-constants": "./src/growlog/photo-constants.ts",
+    "./growlog/report-queries": "./src/growlog/report-queries.ts",
     "./types/*": "./src/types/*.ts"
   },
   "dependencies": {

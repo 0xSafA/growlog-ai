@@ -1,5 +1,7 @@
 import { useFarmContext } from '@/providers/FarmProvider';
+import { enqueueLogEntry } from '@/lib/offline-queue';
 import { createLogEntry, type EventType } from '@growlog/domain';
+import NetInfo from '@react-native-community/netinfo';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import {
@@ -27,23 +29,38 @@ export default function TextCaptureScreen() {
   const [eventType, setEventType] = useState<EventType>('note');
   const [body, setBody] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [msg, setMsg] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
   async function submit() {
     if (!farmId || !cycle || !primaryScope || !body.trim()) return;
     setError(null);
+    setMsg(null);
     setPending(true);
     try {
-      await createLogEntry(supabase, {
+      const payload = {
         farmId,
         cycleId: cycle.id,
         scopeId: primaryScope.id,
         eventType,
         body: body.trim(),
         occurredAt: new Date().toISOString(),
-        sourceType: 'user_form',
+        sourceType: 'user_form' as const,
         createdBy: userId,
-      });
+      };
+      const net = await NetInfo.fetch();
+      const offline = net.isConnected === false || net.isInternetReachable === false;
+      if (offline) {
+        await enqueueLogEntry(payload);
+        setMsg('Saved offline — will sync when online.');
+        setBody('');
+        setTimeout(() => {
+          router.back();
+          router.back();
+        }, 800);
+        return;
+      }
+      await createLogEntry(supabase, payload);
       await refetchAll();
       router.back();
       router.back();
@@ -92,6 +109,7 @@ export default function TextCaptureScreen() {
         />
 
         {error ? <Text style={styles.error}>{error}</Text> : null}
+        {msg ? <Text style={styles.ok}>{msg}</Text> : null}
 
         <Pressable
           style={[styles.button, pending && styles.buttonDisabled]}
@@ -139,4 +157,5 @@ const styles = StyleSheet.create({
   buttonDisabled: { opacity: 0.6 },
   buttonText: { color: '#fff', fontWeight: '600', fontSize: 16 },
   error: { color: '#b91c1c', marginTop: 8 },
+  ok: { color: '#166534', marginTop: 8 },
 });

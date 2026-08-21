@@ -640,9 +640,13 @@ Goal: authenticated user sees Daily Focus and can save a voice or text log.
 
 ## Phase 3 Checklist
 
-- [ ] Offline queue for log + photo
-- [ ] Push notifications + deep links
-- [ ] Reports list + WebView detail
+- [x] Photos — `(tabs)/more/photos` + `capture/photo` with `expo-image-picker`
+- [x] Sensors — manual entry screen
+- [x] Settings — farm rename, farm/scope picker, plants, offline sync, push registration
+- [x] Offline queue for log + photo (`AsyncStorage` + auto-sync on reconnect)
+- [x] Push notifications + deep links (`expo-notifications`, local token registration)
+- [x] Reports list + native block detail (generate via `/api/reports/generate`)
+- [ ] Daily Focus AI cards (`ai_insights` query)
 - [ ] SOP definition editor
 - [ ] Move `apps/web` from repo root; trim to companion scope
 

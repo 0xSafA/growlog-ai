@@ -9,7 +9,12 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "ai.growlog.mobile"
+      "bundleIdentifier": "ai.growlog.mobile",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Growlog uses the camera for grow photos.",
+        "NSMicrophoneUsageDescription": "Growlog records voice logs.",
+        "NSPhotoLibraryUsageDescription": "Growlog saves and uploads grow photos."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -19,7 +24,13 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "package": "ai.growlog.mobile",
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "CAMERA",
+        "RECORD_AUDIO",
+        "READ_MEDIA_IMAGES",
+        "POST_NOTIFICATIONS"
+      ]
     },
     "plugins": [
       "expo-router",
@@ -35,6 +46,20 @@
         "expo-av",
         {
           "microphonePermission": "Allow Growlog to record voice logs."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow Growlog to upload grow photos.",
+          "cameraPermission": "Allow Growlog to capture grow photos."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/icon.png",
+          "color": "#2d6a4f"
         }
       ]
     ],

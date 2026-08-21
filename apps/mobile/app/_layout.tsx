@@ -6,6 +6,8 @@ import { useEffect } from 'react';
 import 'react-native-reanimated';
 
 import { FarmProvider, useFarmContext } from '@/providers/FarmProvider';
+import { OfflineSyncProvider } from '@/providers/OfflineSyncProvider';
+import { attachNotificationListeners, registerForPushNotifications } from '@/lib/notifications';
 
 export { ErrorBoundary } from 'expo-router';
 
@@ -31,11 +33,26 @@ export default function RootLayout() {
   return (
     <QueryClientProvider client={queryClient}>
       <FarmProvider>
-        <AuthGate />
-        <RootStack />
+        <OfflineSyncProvider>
+          <AuthGate />
+          <NotificationBootstrap />
+          <RootStack />
+        </OfflineSyncProvider>
       </FarmProvider>
     </QueryClientProvider>
   );
+}
+
+function NotificationBootstrap() {
+  const { userId } = useFarmContext();
+
+  useEffect(() => {
+    if (!userId) return;
+    void registerForPushNotifications();
+    return attachNotificationListeners();
+  }, [userId]);
+
+  return null;
 }
 
 function AuthGate() {

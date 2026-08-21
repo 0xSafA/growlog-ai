@@ -138,6 +138,57 @@ export async function createPhotoCaptureEvent(
   };
 }
 
+/** Mobile / React Native: upload raw bytes instead of browser File. */
+export async function createPhotoCaptureUpload(
+  supabase: SupabaseClient,
+  params: {
+    farmId: string;
+    cycleId: string;
+    scopeId: string;
+    bytes: ArrayBuffer | Uint8Array | Blob;
+    fileName: string;
+    mimeType: string;
+    fileSize: number;
+    caption?: string;
+    userId?: string | null;
+  }
+) {
+  const { farmId, cycleId, scopeId, caption } = params;
+  const occurredAt = new Date().toISOString();
+  const safeName = params.fileName.replace(/[^\w.-]/g, '_');
+  const path = `${farmId}/${crypto.randomUUID()}-${safeName}`;
+
+  const { error: upErr } = await supabase.storage.from('media').upload(path, params.bytes, {
+    cacheControl: '3600',
+    upsert: false,
+    contentType: params.mimeType || 'image/jpeg',
+  });
+  if (upErr) throw upErr;
+
+  const { data, error } = await supabase.rpc('finalize_photo_capture', {
+    p_farm_id: farmId,
+    p_cycle_id: cycleId,
+    p_scope_id: scopeId,
+    p_storage_bucket: 'media',
+    p_storage_path: path,
+    p_mime_type: params.mimeType || 'image/jpeg',
+    p_file_name: params.fileName,
+    p_file_size: params.fileSize,
+    p_caption: caption ?? null,
+    p_captured_at: occurredAt,
+  });
+  if (error) {
+    await supabase.storage.from('media').remove([path]).catch(() => undefined);
+    throw error;
+  }
+
+  return data as {
+    event: Record<string, unknown>;
+    asset: Record<string, unknown>;
+    jobs: Record<string, unknown>;
+  };
+}
+
 export async function createManualSensorReading(
   supabase: SupabaseClient,
   params: {

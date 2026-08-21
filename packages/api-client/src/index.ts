@@ -13,4 +13,5 @@ export {
   extractVoiceIntent,
   askAssistant,
   materializeSopRuns,
+  generateReport,
 } from './server/http';

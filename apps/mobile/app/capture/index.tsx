@@ -4,6 +4,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 const INTENTS = [
   { href: '/capture/voice' as const, label: 'Voice log', icon: '🎤' },
   { href: '/capture/text' as const, label: 'Text log', icon: '✏️' },
+  { href: '/capture/photo' as const, label: 'Photo', icon: '📷' },
 ];
 
 export default function CaptureIndexScreen() {

@@ -54,3 +54,14 @@ export async function materializeSopRuns(
 ) {
   return postJson<unknown>('/api/sop/materialize', params, token);
 }
+
+export async function generateReport(
+  token: string,
+  params: Record<string, unknown>
+) {
+  return postJson<{ reportId?: string; error?: string; detail?: string }>(
+    '/api/reports/generate',
+    params,
+    token
+  );
+}
