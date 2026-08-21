@@ -1,9 +1,34 @@
 import { useFarmContext } from '@/providers/FarmProvider';
+import { anchorDateForTimezone, sopRunTitle } from '@/lib/sop-utils';
+import { fetchOpenSopRuns, SOP_RUNS_QUERY_KEY } from '@growlog/domain';
+import { materializeSopRuns } from '@growlog/api-client';
+import { useQuery } from '@tanstack/react-query';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
 
 export default function DailyFocusScreen() {
-  const { cycle, todayEvents, recentEvents, loading, primaryScope } = useFarmContext();
+  const { supabase, farmId, cycle, farms, todayEvents, recentEvents, loading, primaryScope } =
+    useFarmContext();
+  const farm = farms.find((f) => f.id === farmId);
+
+  const sopRunsQuery = useQuery({
+    queryKey: [SOP_RUNS_QUERY_KEY, farmId, cycle?.id, 'daily-focus'],
+    enabled: !!farmId && !!cycle?.id && !!farm && !loading,
+    queryFn: async () => {
+      const anchorDate = anchorDateForTimezone(farm?.timezone ?? 'UTC');
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      if (!token) return [];
+      await materializeSopRuns(token, {
+        farmId: farmId!,
+        cycleId: cycle!.id,
+        anchorDate,
+      }).catch(() => undefined);
+      return fetchOpenSopRuns(supabase, { farmId: farmId!, cycleId: cycle!.id });
+    },
+  });
 
   if (loading) {
     return (
@@ -25,6 +50,8 @@ export default function DailyFocusScreen() {
     ['issue_detected', 'pest_detected', 'deficiency_suspected', 'anomaly'].includes(e.event_type)
   );
 
+  const sopRuns = sopRunsQuery.data ?? [];
+
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.card}>
@@ -33,6 +60,22 @@ export default function DailyFocusScreen() {
           {cycle.name} · stage {cycle.stage ?? '—'}
         </Text>
       </View>
+
+      {sopRuns.length > 0 && (
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Today SOP</Text>
+          {sopRuns.slice(0, 4).map((r) => (
+            <Pressable
+              key={r.id}
+              style={styles.sopRow}
+              onPress={() => router.push(`/sop/run/${r.id}`)}
+            >
+              <Text style={styles.sopTitle}>{sopRunTitle(r)}</Text>
+              <Text style={styles.sopMeta}>{r.status}</Text>
+            </Pressable>
+          ))}
+        </View>
+      )}
 
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Today</Text>
@@ -81,8 +124,21 @@ const styles = StyleSheet.create({
     borderColor: '#d8ead9',
   },
   riskCard: { borderColor: '#fbbf24', backgroundColor: '#fffbeb' },
-  cardTitle: { fontSize: 13, fontWeight: '700', color: '#52796f', marginBottom: 6, textTransform: 'uppercase' },
+  cardTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#52796f',
+    marginBottom: 6,
+    textTransform: 'uppercase',
+  },
   cardBody: { fontSize: 15, color: '#1f2937', lineHeight: 22 },
+  sopRow: {
+    paddingVertical: 10,
+    borderTopWidth: 1,
+    borderTopColor: '#f3f4f6',
+  },
+  sopTitle: { fontSize: 15, fontWeight: '600', color: '#1f2937' },
+  sopMeta: { fontSize: 12, color: '#6b7280', marginTop: 2 },
   eventRow: { fontSize: 14, color: '#374151', marginBottom: 6 },
   muted: { color: '#6b7280', fontSize: 14 },
   cta: {

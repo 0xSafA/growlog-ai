@@ -8,6 +8,10 @@
     ".": "./src/index.ts",
     "./growlog/queries": "./src/growlog/queries.ts",
     "./growlog/mutations": "./src/growlog/mutations.ts",
+    "./growlog/sop-queries": "./src/growlog/sop-queries.ts",
+    "./growlog/sop-mutations": "./src/growlog/sop-mutations.ts",
+    "./growlog/sop-engine-pure": "./src/growlog/sop-engine-pure.ts",
+    "./growlog/sop-required-inputs": "./src/growlog/sop-required-inputs.ts",
     "./types/*": "./src/types/*.ts"
   },
   "dependencies": {

@@ -7,3 +7,7 @@ export * from './types/retrieval-assembly';
 export * from './types/sop';
 export * from './growlog/queries';
 export * from './growlog/mutations';
+export * from './growlog/sop-queries';
+export * from './growlog/sop-mutations';
+export * from './growlog/sop-engine-pure';
+export * from './growlog/sop-required-inputs';
