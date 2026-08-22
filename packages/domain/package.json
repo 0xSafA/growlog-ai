@@ -14,6 +14,8 @@
     "./growlog/sop-required-inputs": "./src/growlog/sop-required-inputs.ts",
     "./growlog/photo-constants": "./src/growlog/photo-constants.ts",
     "./growlog/report-queries": "./src/growlog/report-queries.ts",
+    "./growlog/daily-focus-insights": "./src/growlog/daily-focus-insights.ts",
+    "./growlog/daily-focus-queries": "./src/growlog/daily-focus-queries.ts",
     "./types/*": "./src/types/*.ts"
   },
   "dependencies": {

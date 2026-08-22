@@ -13,3 +13,5 @@ export * from './growlog/sop-engine-pure';
 export * from './growlog/sop-required-inputs';
 export * from './growlog/photo-constants';
 export * from './growlog/report-queries';
+export * from './growlog/daily-focus-insights';
+export * from './growlog/daily-focus-queries';
