@@ -1,5 +1,5 @@
 import { flushOfflineQueue } from '@/lib/offline-sync';
-import { getOfflineQueue } from '@/lib/offline-queue';
+import { getOfflineQueue, subscribeOfflineQueue } from '@/lib/offline-queue';
 import { useFarmContext } from '@/providers/FarmProvider';
 import NetInfo from '@react-native-community/netinfo';
 import {
@@ -10,6 +10,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
+import { AppState } from 'react-native';
 
 type OfflineSyncContextValue = {
   queueCount: number;
@@ -49,6 +50,16 @@ export function OfflineSyncProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     void refreshQueueCount();
+    return subscribeOfflineQueue(() => {
+      void refreshQueueCount();
+    });
+  }, [refreshQueueCount]);
+
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state === 'active') void refreshQueueCount();
+    });
+    return () => sub.remove();
   }, [refreshQueueCount]);
 
   useEffect(() => {

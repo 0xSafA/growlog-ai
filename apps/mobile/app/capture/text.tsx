@@ -37,17 +37,17 @@ export default function TextCaptureScreen() {
     setError(null);
     setMsg(null);
     setPending(true);
+    const payload = {
+      farmId,
+      cycleId: cycle.id,
+      scopeId: primaryScope.id,
+      eventType,
+      body: body.trim(),
+      occurredAt: new Date().toISOString(),
+      sourceType: 'user_form' as const,
+      createdBy: userId,
+    };
     try {
-      const payload = {
-        farmId,
-        cycleId: cycle.id,
-        scopeId: primaryScope.id,
-        eventType,
-        body: body.trim(),
-        occurredAt: new Date().toISOString(),
-        sourceType: 'user_form' as const,
-        createdBy: userId,
-      };
       const net = await NetInfo.fetch();
       const offline = net.isConnected === false || net.isInternetReachable === false;
       if (offline) {
@@ -65,6 +65,18 @@ export default function TextCaptureScreen() {
       router.back();
       router.back();
     } catch (err: unknown) {
+      const net = await NetInfo.fetch();
+      const offline = net.isConnected === false || net.isInternetReachable === false;
+      if (offline) {
+        await enqueueLogEntry(payload);
+        setMsg('Saved offline — will sync when online.');
+        setBody('');
+        setTimeout(() => {
+          router.back();
+          router.back();
+        }, 800);
+        return;
+      }
       setError(err instanceof Error ? err.message : 'Save failed');
     } finally {
       setPending(false);

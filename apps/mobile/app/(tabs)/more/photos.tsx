@@ -47,11 +47,17 @@ export default function PhotosScreen() {
     if (result.canceled || !result.assets[0]) return;
 
     const asset = result.assets[0];
+    let fileSize = asset.fileSize ?? 0;
+    if (fileSize <= 0) {
+      const probe = await fetch(asset.uri);
+      const probeBuf = await probe.arrayBuffer();
+      fileSize = probeBuf.byteLength;
+    }
     const pick: PhotoPickResult = {
       uri: asset.uri,
       fileName: asset.fileName ?? `photo-${Date.now()}.jpg`,
       mimeType: asset.mimeType ?? 'image/jpeg',
-      fileSize: asset.fileSize ?? 0,
+      fileSize,
     };
 
     if (pick.fileSize > maxBytes) {

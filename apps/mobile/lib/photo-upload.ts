@@ -53,16 +53,33 @@ export async function uploadPhotoCapture(
 
   const res = await fetch(params.pick.uri);
   const buf = await res.arrayBuffer();
-  await createPhotoCaptureUpload(supabase, {
-    farmId: params.farmId,
-    cycleId: params.cycleId,
-    scopeId: params.scopeId,
-    bytes: buf,
-    fileName: params.pick.fileName,
-    mimeType: params.pick.mimeType,
-    fileSize: params.pick.fileSize,
-    caption: params.caption,
-    userId: params.userId,
-  });
-  return 'uploaded';
+  const fileSize = params.pick.fileSize > 0 ? params.pick.fileSize : buf.byteLength;
+  try {
+    await createPhotoCaptureUpload(supabase, {
+      farmId: params.farmId,
+      cycleId: params.cycleId,
+      scopeId: params.scopeId,
+      bytes: buf,
+      fileName: params.pick.fileName,
+      mimeType: params.pick.mimeType,
+      fileSize,
+      caption: params.caption,
+      userId: params.userId,
+    });
+    return 'uploaded';
+  } catch (err) {
+    if (params.offlineOk === false) throw err;
+    await enqueuePhotoCapture({
+      farmId: params.farmId,
+      cycleId: params.cycleId,
+      scopeId: params.scopeId,
+      localUri: params.pick.uri,
+      fileName: params.pick.fileName,
+      mimeType: params.pick.mimeType,
+      fileSize,
+      caption: params.caption,
+      userId: params.userId,
+    });
+    return 'queued';
+  }
 }

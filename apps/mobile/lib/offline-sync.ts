@@ -7,6 +7,7 @@ import {
   getOfflineQueue,
   markQueueItemFailed,
   removeQueueItem,
+  requeueItem,
   type PendingCapture,
 } from '@/lib/offline-queue';
 
@@ -29,6 +30,7 @@ async function syncOne(supabase: SupabaseClient, item: PendingCapture): Promise<
       const p = item.payload;
       const res = await fetch(p.localUri);
       const buf = await res.arrayBuffer();
+      const fileSize = p.fileSize > 0 ? p.fileSize : buf.byteLength;
       await createPhotoCaptureUpload(supabase, {
         farmId: p.farmId,
         cycleId: p.cycleId,
@@ -36,7 +38,7 @@ async function syncOne(supabase: SupabaseClient, item: PendingCapture): Promise<
         bytes: buf,
         fileName: p.fileName,
         mimeType: p.mimeType,
-        fileSize: p.fileSize,
+        fileSize,
         caption: p.caption,
         userId: p.userId,
       });
@@ -56,7 +58,10 @@ export async function flushOfflineQueue(supabase: SupabaseClient): Promise<{
   const items = await getOfflineQueue();
   let synced = 0;
   let failed = 0;
-  for (const item of items.filter((i) => i.status === 'pending' && i.retryCount < 5)) {
+  for (const item of items.filter((i) => i.retryCount < 5)) {
+    if (item.status === 'failed') {
+      await requeueItem(item.id);
+    }
     const ok = await syncOne(supabase, item);
     if (ok) synced += 1;
     else failed += 1;

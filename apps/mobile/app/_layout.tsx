@@ -48,7 +48,7 @@ function NotificationBootstrap() {
 
   useEffect(() => {
     if (!userId) return;
-    void registerForPushNotifications();
+    void registerForPushNotifications().catch(() => undefined);
     return attachNotificationListeners();
   }, [userId]);
 

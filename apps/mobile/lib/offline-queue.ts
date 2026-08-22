@@ -58,6 +58,19 @@ async function readQueue(): Promise<PendingCapture[]> {
 
 async function writeQueue(items: PendingCapture[]): Promise<void> {
   await AsyncStorage.setItem(QUEUE_KEY, JSON.stringify(items));
+  notifyQueueChanged();
+}
+
+type QueueListener = () => void;
+const listeners = new Set<QueueListener>();
+
+export function subscribeOfflineQueue(listener: QueueListener): () => void {
+  listeners.add(listener);
+  return () => listeners.delete(listener);
+}
+
+function notifyQueueChanged() {
+  for (const listener of listeners) listener();
 }
 
 export async function getOfflineQueue(): Promise<PendingCapture[]> {
@@ -104,6 +117,12 @@ export async function markQueueItemFailed(id: string): Promise<void> {
   const next = items.map((i) =>
     i.id === id ? { ...i, status: 'failed' as const, retryCount: i.retryCount + 1 } : i
   );
+  await writeQueue(next);
+}
+
+export async function requeueItem(id: string): Promise<void> {
+  const items = await readQueue();
+  const next = items.map((i) => (i.id === id ? { ...i, status: 'pending' as const } : i));
   await writeQueue(next);
 }
 
