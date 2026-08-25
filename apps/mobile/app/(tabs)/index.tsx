@@ -109,7 +109,12 @@ export default function DailyFocusScreen() {
         <Text style={styles.cardTitle}>Today SOP</Text>
         {sopRunsQuery.isLoading && <Text style={styles.muted}>Loading tasks…</Text>}
         {sopRuns.length === 0 && !sopRunsQuery.isLoading && (
-          <Text style={styles.muted}>No open SOP runs for today.</Text>
+          <>
+            <Text style={styles.muted}>No open SOP runs for today.</Text>
+            <Pressable onPress={() => router.push('/sop/new')}>
+              <Text style={styles.link}>Create a SOP</Text>
+            </Pressable>
+          </>
         )}
         {sopRuns.slice(0, 4).map((r) => (
           <Pressable

@@ -3,6 +3,7 @@ import {
   type DailyFocusInsightRow,
   type InsightGroundingRow,
 } from '@growlog/domain';
+import { speakText } from '@/lib/speak-text';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -29,21 +30,24 @@ type Props = {
 };
 
 export function AiFocusCard({ insight, supabase, onOpenAssistant }: Props) {
-  const [expanded, setExpanded] = useState(false);
+  const [bodyExpanded, setBodyExpanded] = useState(false);
+  const [evidenceOpen, setEvidenceOpen] = useState(false);
   const [grounding, setGrounding] = useState<InsightGroundingRow[] | null>(null);
   const [groundingLoading, setGroundingLoading] = useState(false);
   const [groundingError, setGroundingError] = useState<string | null>(null);
+  const [speakPending, setSpeakPending] = useState(false);
+  const [speakError, setSpeakError] = useState<string | null>(null);
 
   const conf = confidenceStyle(insight.confidence_label);
   const confidencePct =
     insight.confidence != null ? Math.round(Number(insight.confidence) * 100) : null;
 
   async function toggleEvidence() {
-    if (expanded) {
-      setExpanded(false);
+    if (evidenceOpen) {
+      setEvidenceOpen(false);
       return;
     }
-    setExpanded(true);
+    setEvidenceOpen(true);
     if (grounding !== null) return;
     setGroundingLoading(true);
     setGroundingError(null);
@@ -57,6 +61,24 @@ export function AiFocusCard({ insight, supabase, onOpenAssistant }: Props) {
     }
   }
 
+  async function onSpeak() {
+    setSpeakPending(true);
+    setSpeakError(null);
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      if (!token) throw new Error('Not signed in');
+      const text = [insight.title, insight.body].filter(Boolean).join('. ');
+      await speakText(token, text);
+    } catch (err: unknown) {
+      setSpeakError(err instanceof Error ? err.message : 'Could not play audio');
+    } finally {
+      setSpeakPending(false);
+    }
+  }
+
   return (
     <View style={styles.card}>
       <View style={styles.headerRow}>
@@ -66,9 +88,14 @@ export function AiFocusCard({ insight, supabase, onOpenAssistant }: Props) {
         </View>
       </View>
 
-      <Text style={styles.body} numberOfLines={expanded ? undefined : 4}>
+      <Text style={styles.body} numberOfLines={bodyExpanded ? undefined : 4}>
         {insight.body}
       </Text>
+      {insight.body.length > 160 && (
+        <Pressable onPress={() => setBodyExpanded((v) => !v)}>
+          <Text style={styles.link}>{bodyExpanded ? 'Show less' : 'Read more'}</Text>
+        </Pressable>
+      )}
 
       <View style={styles.trustRow}>
         <Text style={styles.trustLabel}>Confidence</Text>
@@ -88,16 +115,25 @@ export function AiFocusCard({ insight, supabase, onOpenAssistant }: Props) {
 
       <View style={styles.actions}>
         <Pressable onPress={() => void toggleEvidence()}>
-          <Text style={styles.link}>{expanded ? 'Hide evidence' : 'Show evidence'}</Text>
+          <Text style={styles.link}>{evidenceOpen ? 'Hide evidence' : 'Show evidence'}</Text>
+        </Pressable>
+        <Pressable onPress={() => void onSpeak()} disabled={speakPending}>
+          {speakPending ? (
+            <ActivityIndicator color="#2d6a4f" size="small" />
+          ) : (
+            <Text style={styles.link}>Listen</Text>
+          )}
         </Pressable>
         {onOpenAssistant ? (
           <Pressable onPress={onOpenAssistant}>
-            <Text style={styles.link}>Ask in Assistant</Text>
+            <Text style={styles.link}>Assistant</Text>
           </Pressable>
         ) : null}
       </View>
 
-      {expanded && (
+      {speakError ? <Text style={styles.speakError}>{speakError}</Text> : null}
+
+      {evidenceOpen && (
         <View style={styles.evidenceBox}>
           {groundingLoading && <ActivityIndicator color="#2d6a4f" />}
           {groundingError ? <Text style={styles.evidenceError}>{groundingError}</Text> : null}
@@ -155,8 +191,9 @@ const styles = StyleSheet.create({
   confLowText: { color: '#9a3412' },
   trustUnknown: { fontSize: 12, color: '#9ca3af' },
   aiNote: { fontSize: 11, color: '#9ca3af', marginTop: 8, fontStyle: 'italic' },
-  actions: { flexDirection: 'row', gap: 16, marginTop: 10 },
+  actions: { flexDirection: 'row', alignItems: 'center', gap: 16, marginTop: 10, flexWrap: 'wrap' },
   link: { fontSize: 13, fontWeight: '600', color: '#2d6a4f' },
+  speakError: { fontSize: 12, color: '#b91c1c', marginTop: 6 },
   evidenceBox: { marginTop: 12, minHeight: 32 },
   evidenceEmpty: { fontSize: 13, color: '#6b7280' },
   evidenceError: { fontSize: 13, color: '#b91c1c' },

@@ -1,5 +1,5 @@
+import { OfflineQueuePanel } from '@/components/settings/OfflineQueuePanel';
 import { useFarmContext } from '@/providers/FarmProvider';
-import { useOfflineSync } from '@/providers/OfflineSyncProvider';
 import { registerForPushNotifications } from '@/lib/notifications';
 import { useEffect, useState } from 'react';
 import {
@@ -24,7 +24,6 @@ export default function SettingsScreen() {
     setScopeId,
     refetchAll,
   } = useFarmContext();
-  const { queueCount, syncing, lastSyncResult, syncNow, refreshQueueCount } = useOfflineSync();
   const farm = farms.find((f) => f.id === farmId);
   const [name, setName] = useState(farm?.name ?? '');
   const [pending, setPending] = useState(false);
@@ -166,26 +165,7 @@ export default function SettingsScreen() {
       </View>
 
       <Text style={styles.section}>Offline sync</Text>
-      <Text style={styles.body}>Pending items: {queueCount}</Text>
-      {lastSyncResult && (
-        <Text style={styles.muted}>
-          Last sync: {lastSyncResult.synced} uploaded, {lastSyncResult.failed} failed
-        </Text>
-      )}
-      <Pressable
-        style={styles.btn}
-        onPress={async () => {
-          await syncNow();
-          await refreshQueueCount();
-        }}
-        disabled={syncing}
-      >
-        {syncing ? (
-          <ActivityIndicator color="#fff" />
-        ) : (
-          <Text style={styles.btnText}>Sync now</Text>
-        )}
-      </Pressable>
+      <OfflineQueuePanel />
 
       <Text style={styles.section}>Notifications</Text>
       <Pressable style={styles.btn} onPress={() => void enablePush()}>

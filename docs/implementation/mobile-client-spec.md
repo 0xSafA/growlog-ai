@@ -647,7 +647,7 @@ Goal: authenticated user sees Daily Focus and can save a voice or text log.
 - [x] Push notifications + deep links (`expo-notifications`, local token registration)
 - [x] Reports list + native block detail (generate via `/api/reports/generate`)
 - [x] Daily Focus AI cards (`ai_insights` query + `AiFocusCard` with evidence)
-- [ ] SOP definition editor
+- [x] SOP definition editor (`sop/new.tsx`)
 - [ ] Move `apps/web` from repo root; trim to companion scope
 
 ---

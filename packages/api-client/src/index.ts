@@ -14,4 +14,5 @@ export {
   askAssistant,
   materializeSopRuns,
   generateReport,
+  speakVoice,
 } from './server/http';

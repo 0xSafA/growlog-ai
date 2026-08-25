@@ -20,6 +20,7 @@
     "expo-av": "~16.0.8",
     "expo-constants": "~57.0.12",
     "expo-device": "~8.0.10",
+    "expo-file-system": "~19.0.21",
     "expo-font": "~57.0.1",
     "expo-image-picker": "~17.0.10",
     "expo-linking": "~57.0.6",

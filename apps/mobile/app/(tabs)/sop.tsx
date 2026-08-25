@@ -56,6 +56,10 @@ export default function SopScreen() {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
+      <Pressable style={styles.createBtn} onPress={() => router.push('/sop/new')}>
+        <Text style={styles.createBtnText}>+ Create SOP</Text>
+      </Pressable>
+
       <Text style={styles.intro}>Execute procedures and track compliance.</Text>
 
       <View style={styles.card}>
@@ -115,6 +119,14 @@ export default function SopScreen() {
 const styles = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
   container: { padding: 16, paddingBottom: 120 },
+  createBtn: {
+    backgroundColor: '#2d6a4f',
+    borderRadius: 10,
+    padding: 14,
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  createBtnText: { color: '#fff', fontWeight: '700', fontSize: 16 },
   intro: { fontSize: 14, color: '#52796f', marginBottom: 16 },
   card: {
     backgroundColor: '#fff',
