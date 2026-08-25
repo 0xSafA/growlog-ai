@@ -90,9 +90,9 @@ export default function SettingsScreen() {
   }
 
   async function enablePush() {
-    const token = await registerForPushNotifications();
+    const token = await registerForPushNotifications(supabase);
     setPushToken(token);
-    setMsg(token ? 'Push notifications enabled.' : 'Push permission denied.');
+    setMsg(token ? 'Push notifications enabled and registered.' : 'Push permission denied.');
   }
 
   return (

@@ -2,6 +2,8 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { createClient } from '@supabase/supabase-js';
 import { getBearerToken, getUserFromBearer } from '@/lib/api/auth-from-request';
 import { materializeSopRunsForDay } from '@/lib/growlog/sop-engine';
+import { createServiceRoleSupabase } from '@/lib/growlog/background-worker-core';
+import { notifyFarmOverdueSopRuns } from '@/lib/growlog/push-notifications';
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
@@ -57,6 +59,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       anchorDate,
       timezone: tz,
     });
+
+    let pushSent = 0;
+    if (result.overdueUpdated > 0 && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      try {
+        const service = createServiceRoleSupabase();
+        const push = await notifyFarmOverdueSopRuns(service, {
+          farmId: body.farmId,
+          cycleId: body.cycleId,
+        });
+        pushSent = push.sent;
+      } catch {
+        // push is best-effort; materialize must succeed
+      }
+    }
+
     return res.status(200).json({
       created: result.created,
       skippedTriggers: result.skippedTriggers,
@@ -64,6 +81,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       evalNoMatch: result.evalNoMatch,
       overdueUpdated: result.overdueUpdated,
       complianceRefreshed: result.complianceRefreshed,
+      pushSent,
       anchorDate,
       timezone: tz,
     });

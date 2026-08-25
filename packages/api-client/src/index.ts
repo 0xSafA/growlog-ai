@@ -15,4 +15,5 @@ export {
   materializeSopRuns,
   generateReport,
   speakVoice,
+  registerPushToken,
 } from './server/http';

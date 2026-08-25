@@ -1,8 +1,10 @@
+import { registerPushToken } from '@growlog/api-client';
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 import { router } from 'expo-router';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -24,7 +26,21 @@ function permissionsGranted(
   );
 }
 
-export async function registerForPushNotifications(): Promise<string | null> {
+async function persistPushToken(supabase: SupabaseClient, expoPushToken: string): Promise<void> {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  const accessToken = session?.access_token;
+  if (!accessToken) return;
+  await registerPushToken(accessToken, {
+    expoPushToken,
+    platform: Platform.OS,
+  });
+}
+
+export async function registerForPushNotifications(
+  supabase?: SupabaseClient
+): Promise<string | null> {
   if (!Device.isDevice) return null;
 
   const existing = await Notifications.getPermissionsAsync();
@@ -43,12 +59,17 @@ export async function registerForPushNotifications(): Promise<string | null> {
   }
 
   const projectId =
-    Constants.expoConfig?.extra?.eas?.projectId ??
-    Constants.easConfig?.projectId;
+    Constants.expoConfig?.extra?.eas?.projectId ?? Constants.easConfig?.projectId;
   const token = projectId
     ? await Notifications.getExpoPushTokenAsync({ projectId })
     : await Notifications.getExpoPushTokenAsync();
-  return token.data;
+  const expoPushToken = token.data;
+
+  if (supabase && expoPushToken) {
+    await persistPushToken(supabase, expoPushToken).catch(() => undefined);
+  }
+
+  return expoPushToken;
 }
 
 export function handleNotificationDeepLink(data: Record<string, unknown> | undefined) {

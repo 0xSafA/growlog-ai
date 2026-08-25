@@ -1,6 +1,7 @@
 import { useFarmContext } from '@/providers/FarmProvider';
 import { createManualSensorReading, fetchGlobalSensorMetrics } from '@growlog/domain';
 import { useQuery } from '@tanstack/react-query';
+import { router, useSegments } from 'expo-router';
 import { useState } from 'react';
 import {
   ActivityIndicator,
@@ -13,6 +14,8 @@ import {
 } from 'react-native';
 
 export default function SensorsScreen() {
+  const segments = useSegments();
+  const fromCapture = segments[0] === 'capture';
   const { supabase, farmId, cycle, primaryScope, refetchAll, userId } = useFarmContext();
   const metricsQuery = useQuery({
     queryKey: ['sensor-metrics-global'],
@@ -47,6 +50,12 @@ export default function SensorsScreen() {
       setValue('');
       await refetchAll();
       setMsg('Reading saved.');
+      if (fromCapture) {
+        setTimeout(() => {
+          router.back();
+          router.back();
+        }, 600);
+      }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Save failed');
     } finally {

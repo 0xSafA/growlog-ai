@@ -563,7 +563,9 @@ On connectivity restore (`@react-native-community/netinfo`):
 | SOP overdue | `{ type: 'sop_overdue', ... }` | open execution |
 | Critical anomaly | `{ type: 'anomaly', insightId }` | open Daily Focus |
 
-Registration: store `expo_push_token` in Supabase table (future migration). Sending: worker or Edge Function — out of Phase 1 scope.
+Registration: `mobile_push_tokens` table + `POST /api/mobile/register-push-token`. Mobile persists Expo token on login/settings.
+
+Sending: after SOP materialize, overdue runs trigger Expo push to farm members (requires `SUPABASE_SERVICE_ROLE_KEY`; optional `EXPO_ACCESS_TOKEN` for production volume).
 
 ---
 
@@ -648,7 +650,7 @@ Goal: authenticated user sees Daily Focus and can save a voice or text log.
 - [x] Reports list + native block detail (generate via `/api/reports/generate`)
 - [x] Daily Focus AI cards (`ai_insights` query + `AiFocusCard` with evidence)
 - [x] SOP definition editor (`sop/new.tsx`)
-- [ ] Move `apps/web` from repo root; trim to companion scope
+- [ ] Move `apps/web` from repo root; trim to companion scope (`apps/web/README.md` documents transition)
 
 ---
 

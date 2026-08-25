@@ -147,7 +147,7 @@ export default function DailyFocusScreen() {
           <Pressable style={styles.quickBtn} onPress={() => router.push('/(tabs)/more/photos')}>
             <Text style={styles.quickBtnText}>Photo</Text>
           </Pressable>
-          <Pressable style={styles.quickBtn} onPress={() => router.push('/(tabs)/more/sensors')}>
+          <Pressable style={styles.quickBtn} onPress={() => router.push('/capture/sensor')}>
             <Text style={styles.quickBtnText}>Sensor</Text>
           </Pressable>
         </View>

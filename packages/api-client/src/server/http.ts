@@ -99,3 +99,10 @@ export async function generateReport(
     token
   );
 }
+
+export async function registerPushToken(
+  token: string,
+  params: { expoPushToken: string; platform: string; deviceLabel?: string }
+) {
+  return postJson<{ ok: boolean }>('/api/mobile/register-push-token', params, token);
+}

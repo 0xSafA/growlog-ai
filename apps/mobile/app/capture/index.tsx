@@ -5,6 +5,7 @@ const INTENTS = [
   { href: '/capture/voice' as const, label: 'Voice log', icon: '🎤' },
   { href: '/capture/text' as const, label: 'Text log', icon: '✏️' },
   { href: '/capture/photo' as const, label: 'Photo', icon: '📷' },
+  { href: '/capture/sensor' as const, label: 'Sensor', icon: '📊' },
 ];
 
 export default function CaptureIndexScreen() {

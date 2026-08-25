@@ -44,13 +44,13 @@ export default function RootLayout() {
 }
 
 function NotificationBootstrap() {
-  const { userId } = useFarmContext();
+  const { userId, supabase } = useFarmContext();
 
   useEffect(() => {
     if (!userId) return;
-    void registerForPushNotifications().catch(() => undefined);
+    void registerForPushNotifications(supabase).catch(() => undefined);
     return attachNotificationListeners();
-  }, [userId]);
+  }, [userId, supabase]);
 
   return null;
 }
